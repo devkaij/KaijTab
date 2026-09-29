@@ -88,7 +88,10 @@ describe("applySyncSnapshot", () => {
       moduleData: { "clock:inst_1": { tz: "UTC" } },
     };
     const incoming = snapshotWith("来自另一台设备");
+    // 只保留这一条，验证同步是"整段替换"而不是合并
+    incoming.shortcuts.items = incoming.shortcuts.items.slice(-1);
     const merged = applySyncSnapshot(local, incoming);
+    expect(merged.shortcuts.items.length).toBe(1);
     expect(merged.shortcuts.items[0]?.title).toBe("来自另一台设备");
     expect(merged.wallpaperCurrent).toBe("wp_1");
     expect(merged.moduleData["clock:inst_1"]).toEqual({ tz: "UTC" });

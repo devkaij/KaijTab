@@ -11,6 +11,17 @@ import { createHistory } from "./canvas/history";
 import { instanceRect, toNormalized, type Rect, type Size } from "./canvas/geometry";
 import type { GuideLine } from "./canvas/snapping";
 import { removeWallpaperFiles } from "./core/wallpaper/opfs";
+import { chromeSync } from "@/shared/storage/kv";
+import {
+  applySyncSnapshot,
+  packForSync,
+  staleChunkKeys,
+  SyncQuotaError,
+  SYNC_META_KEY,
+  toSyncSnapshot,
+  unpackSync,
+} from "@/shared/storage/sync";
+import { toast } from "./ui/toast";
 
 export const state = signal<RootState>(createDefaultState());
 export const viewport = signal<Size>({
@@ -51,6 +62,7 @@ export function commit(mutate: (draft: RootState) => RootState, opts: CommitOpti
   lastCommit = { key: opts.key ?? "", at: now };
   state.value = mutate(state.value);
   saver.save();
+  scheduleSyncPush();
   canUndo.value = history.canUndo();
   canRedo.value = history.canRedo();
 }
@@ -327,9 +339,96 @@ export function seedDefaultLayout(): void {
   });
 }
 
+/* ---------- 浏览器账号同步 ---------- */
+
+export const syncEnabled = signal(false);
+
+let pushTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** 变更后延迟推送，避免高频写入触发 sync 写配额。 */
+export function scheduleSyncPush(): void {
+  if (!syncEnabled.value) return;
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => {
+    pushTimer = null;
+    void pushToSync();
+  }, 800);
+}
+
+export async function pushToSync(): Promise<void> {
+  const store = chromeSync();
+  try {
+    const packed = packForSync(toSyncSnapshot(state.value));
+    const existing = await store.get(null);
+    const prevRaw = existing[SYNC_META_KEY];
+    let prevChunks = 0;
+    if (typeof prevRaw === "string") {
+      try {
+        prevChunks = (JSON.parse(prevRaw) as { chunks?: number }).chunks ?? 0;
+      } catch {
+        prevChunks = 0;
+      }
+    }
+    const stale = staleChunkKeys(prevChunks, packed.meta.chunks);
+    if (stale.length > 0) await store.remove(stale);
+    await store.set(packed.items);
+  } catch (error) {
+    if (error instanceof SyncQuotaError) {
+      syncEnabled.value = false;
+      commit((s) => ({ ...s, settings: { ...s.settings, syncEnabled: false } }), {
+        skipHistory: true,
+      });
+      toast(`同步已自动关闭：数据 ${Math.round(error.bytes / 1024)}KB 超出浏览器同步配额。本地数据不受影响。`);
+    } else {
+      toast(`同步失败：${String((error as Error).message ?? error)}`);
+    }
+  }
+}
+
+export async function setSyncEnabled(enabled: boolean): Promise<void> {
+  syncEnabled.value = enabled;
+  commit((s) => ({ ...s, settings: { ...s.settings, syncEnabled: enabled } }), {
+    skipHistory: true,
+  });
+
+  const store = chromeSync();
+  if (enabled) {
+    await pushToSync();
+    if (syncEnabled.value) {
+      toast("已开启账号同步：布局 / 快捷方式 / 设置跨设备同步，壁纸与模块私有数据只存本地");
+    }
+  } else {
+    try {
+      const keys = Object.keys(await store.get(null)).filter((k) => k.startsWith("sync:"));
+      if (keys.length > 0) await store.remove(keys);
+      toast("已关闭账号同步，云端副本已清除");
+    } catch (error) {
+      toast(`清理云端副本失败：${String((error as Error).message ?? error)}`);
+    }
+  }
+}
+
+/* ---------- 启动 ---------- */
+
 export async function bootstrap(): Promise<void> {
-  const { state: loaded } = await loadState();
+  const { state: loaded, migratedFrom } = await loadState();
   state.value = loaded;
+  if (migratedFrom != null) {
+    toast(`数据已从 v${migratedFrom} 迁移到 v${loaded.schemaVersion}`);
+  }
+
+  // 浏览器账号同步：存在云端快照则以云端为准（壁纸与私有数据仍用本地）
+  try {
+    const snapshot = unpackSync(await chromeSync().get(null));
+    if (snapshot) {
+      state.value = applySyncSnapshot(state.value, snapshot);
+      await saver.flush();
+    }
+  } catch {
+    // 同步不可用不影响本地使用
+  }
+  syncEnabled.value = state.value.settings.syncEnabled === true;
+
   seedDefaultLayout();
   booted.value = true;
 

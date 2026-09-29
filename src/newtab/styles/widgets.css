@@ -282,3 +282,23 @@
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* ---------- 全局提示 ---------- */
+
+.kt-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30000;
+  max-width: 560px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--kt-surface-strong);
+  border: 1px solid var(--kt-border);
+  box-shadow: var(--kt-shadow);
+  backdrop-filter: blur(12px);
+  font-size: 13px;
+  cursor: pointer;
+  animation: kt-fade-in 200ms ease;
+}

@@ -8,13 +8,19 @@ import { WallpaperLayer } from "./core/wallpaper/WallpaperLayer";
 import { WallpaperPanel } from "./core/wallpaper/WallpaperPanel";
 import { ModuleCenter } from "./module-host/ModuleCenter";
 import { InstanceSettingsDialog } from "./module-host/InstanceSettings";
+import { Toasts } from "./ui/toast";
 
 export function App() {
   const [ready, setReady] = useState(false);
   useKeyboard();
 
   useEffect(() => {
-    void bootstrap().then(() => setReady(true));
+    void bootstrap().then(() => {
+      setReady(true);
+      requestAnimationFrame(() => {
+        performance.mark("kt:interactive");
+      });
+    });
   }, []);
 
   if (!ready) return null;
@@ -28,6 +34,7 @@ export function App() {
       <InstanceSettingsDialog />
       <WallpaperPanel />
       <ShortcutEditor />
+      <Toasts />
     </div>
   );
 }

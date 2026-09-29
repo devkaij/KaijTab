@@ -80,6 +80,8 @@ export interface SettingsState {
   playOnlyWhenFocused: boolean;
   /** 编辑态壁纸变暗 */
   dimWallpaperInEditor: boolean;
+  /** 启用浏览器账号同步（仅同步小配置，壁纸永不上云） */
+  syncEnabled: boolean;
   editorPrefs: {
     /** 网格吸附步长 px，null 为关闭 */
     grid: number | null;

@@ -5,6 +5,8 @@ import {
   moduleCenterOpen,
   redo,
   setEditing,
+  setSyncEnabled,
+  syncEnabled,
   undo,
   wallpaperPanelOpen,
 } from "@/newtab/store";
@@ -55,6 +57,14 @@ export function Toolbar() {
         data-testid="open-wallpaper-panel"
       >
         壁纸
+      </button>
+      <button
+        class="kt-btn"
+        onClick={() => void setSyncEnabled(!syncEnabled.value)}
+        data-testid="sync-toggle"
+        title="把布局 / 快捷方式 / 设置同步到浏览器账号（壁纸与模块私有数据不上云）"
+      >
+        {syncEnabled.value ? "同步：开" : "同步：关"}
       </button>
       <span class="kt-toolbar-hint">拖动移动 · 角/边缩放 · 按住 Alt 关闭吸附 · 方向键微调</span>
     </div>

@@ -34,6 +34,7 @@ export function createDefaultState(): RootState {
       pauseWhenHidden: true,
       playOnlyWhenFocused: false,
       dimWallpaperInEditor: true,
+      syncEnabled: false,
       editorPrefs: {
         grid: null,
         snapThreshold: 6,
