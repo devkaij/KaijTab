@@ -1,0 +1,17 @@
+/* 主题令牌：模块与核心只允许使用这里的变量，不写死颜色 */
+:root {
+  --kt-bg: #0d1117;
+  --kt-fg: #e6edf3;
+  --kt-muted: #8b949e;
+  --kt-surface: rgba(22, 27, 34, 0.72);
+  --kt-surface-strong: rgba(22, 27, 34, 0.92);
+  --kt-border: rgba(240, 246, 252, 0.12);
+  --kt-accent: #58a6ff;
+  --kt-accent-fg: #ffffff;
+  --kt-danger: #f85149;
+  --kt-guide: #58a6ff;
+  --kt-radius: 12px;
+  --kt-radius-sm: 8px;
+  --kt-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  --kt-font: "Segoe UI", "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
+}

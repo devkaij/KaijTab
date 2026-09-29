@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "KaijTab",
+  "version": "0.1.0",
+  "description": "自由画布式新标签页：本地动态壁纸、模块按需加载、零服务端。",
+  "minimum_chrome_version": "110",
+  "chrome_url_overrides": {
+    "newtab": "main.html"
+  },
+  "permissions": ["storage", "unlimitedStorage", "favicon"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}
