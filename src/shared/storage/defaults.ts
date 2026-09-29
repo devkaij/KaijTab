@@ -35,6 +35,7 @@ export function createDefaultState(): RootState {
       playOnlyWhenFocused: false,
       dimWallpaperInEditor: true,
       syncEnabled: false,
+      glassEffect: "frost",
       editorPrefs: {
         grid: null,
         snapThreshold: 6,

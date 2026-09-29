@@ -18,6 +18,8 @@ export interface WidgetInstance {
   /** 叠放层级，越大越靠上 */
   z: number;
   locked?: boolean;
+  /** 实例级玻璃效果覆盖；缺省跟随全局设置 */
+  glass?: GlassEffect | "inherit";
   /** 实例级配置 */
   props: Record<string, unknown>;
 }
@@ -72,6 +74,8 @@ export interface WallpaperRecord {
   source: "we" | "file";
 }
 
+export type GlassEffect = "none" | "frost" | "liquid";
+
 export interface SettingsState {
   searchEngine: SearchEngine;
   /** 页面隐藏时暂停动态壁纸 */
@@ -82,6 +86,8 @@ export interface SettingsState {
   dimWallpaperInEditor: boolean;
   /** 启用浏览器账号同步（仅同步小配置，壁纸永不上云） */
   syncEnabled: boolean;
+  /** 元件背景的玻璃质感（可被实例级覆盖） */
+  glassEffect: GlassEffect;
   editorPrefs: {
     /** 网格吸附步长 px，null 为关闭 */
     grid: number | null;

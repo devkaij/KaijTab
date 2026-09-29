@@ -14,4 +14,62 @@
   --kt-radius-sm: 8px;
   --kt-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
   --kt-font: "Segoe UI", "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
+
+  /* ---------- 元件表面令牌 ----------
+     元件（核心与模块）不要写死背景，统一消费这两组变量：
+     - --kt-card-*  ：元件自己画的卡片（glass = none 时生效）
+     - --kt-glass-* ：宿主在玻璃模式下画的整体表面（元件自动变透明）
+     由 [data-glass] 模式块决定取值，实例级 data-glass 可覆盖全局。 */
+  --kt-card-bg: rgba(22, 27, 34, 0.72);
+  --kt-card-blur: blur(14px) saturate(125%);
+  --kt-card-border: 1px solid var(--kt-border);
+  --kt-card-shadow: var(--kt-shadow);
+  --kt-glass-bg: transparent;
+  --kt-glass-blur: none;
+  --kt-glass-border: 1px solid transparent;
+  --kt-glass-shadow: none;
+}
+
+/* 无：保持元件自己的卡片外观（搜索胶囊 / 时钟卡片） */
+[data-glass="none"] {
+  --kt-card-bg: rgba(22, 27, 34, 0.72);
+  --kt-card-blur: blur(14px) saturate(125%);
+  --kt-card-border: 1px solid var(--kt-border);
+  --kt-card-shadow: var(--kt-shadow);
+  --kt-glass-bg: transparent;
+  --kt-glass-blur: none;
+  --kt-glass-border: 1px solid transparent;
+  --kt-glass-shadow: none;
+}
+
+/* 磨砂玻璃：宿主统一画卡片，元件内容透明 */
+[data-glass="frost"] {
+  --kt-card-bg: transparent;
+  --kt-card-blur: none;
+  --kt-card-border: 1px solid transparent;
+  --kt-card-shadow: none;
+  --kt-glass-bg: rgba(18, 24, 32, 0.42);
+  --kt-glass-blur: blur(20px) saturate(150%);
+  --kt-glass-border: 1px solid rgba(255, 255, 255, 0.16);
+  --kt-glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.32);
+}
+
+/* 液态玻璃：更强折射 + 顶部高光 + 内描边 */
+[data-glass="liquid"] {
+  --kt-card-bg: transparent;
+  --kt-card-blur: none;
+  --kt-card-border: 1px solid transparent;
+  --kt-card-shadow: none;
+  --kt-glass-bg: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.06) 42%,
+    rgba(255, 255, 255, 0.12) 100%
+  );
+  --kt-glass-blur: blur(28px) saturate(190%);
+  --kt-glass-border: 1px solid rgba(255, 255, 255, 0.3);
+  --kt-glass-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    0 12px 34px rgba(0, 0, 0, 0.38);
 }

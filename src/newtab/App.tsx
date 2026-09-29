@@ -8,6 +8,7 @@ import { WallpaperLayer } from "./core/wallpaper/WallpaperLayer";
 import { WallpaperPanel } from "./core/wallpaper/WallpaperPanel";
 import { ModuleCenter } from "./module-host/ModuleCenter";
 import { InstanceSettingsDialog } from "./module-host/InstanceSettings";
+import { SettingsPanel } from "./editor/SettingsPanel";
 import { Toasts } from "./ui/toast";
 
 export function App() {
@@ -32,6 +33,7 @@ export function App() {
       <Toolbar />
       <ModuleCenter />
       <InstanceSettingsDialog />
+      <SettingsPanel />
       <WallpaperPanel />
       <ShortcutEditor />
       <Toasts />

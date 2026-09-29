@@ -17,6 +17,8 @@
   top: 0;
   left: 0;
   border-radius: var(--kt-radius);
+  /* 尺寸容器：元件内部用 cqw / cqh 等单位跟随元件大小缩放 */
+  container-type: size;
 }
 
 .kt-item[data-editing="true"]::after {
@@ -42,6 +44,16 @@
   height: 100%;
   overflow: hidden;
   border-radius: var(--kt-radius);
+}
+
+/* 玻璃模式：宿主在元件表面统一画卡片，元件自身卡片自动透明（见 theme.css 令牌） */
+.kt-item[data-glass="frost"] .kt-widget,
+.kt-item[data-glass="liquid"] .kt-widget {
+  background: var(--kt-glass-bg);
+  backdrop-filter: var(--kt-glass-blur);
+  -webkit-backdrop-filter: var(--kt-glass-blur);
+  border: var(--kt-glass-border);
+  box-shadow: var(--kt-glass-shadow);
 }
 
 .kt-item[data-editing="true"] .kt-widget {

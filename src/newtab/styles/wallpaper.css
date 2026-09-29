@@ -269,3 +269,41 @@
   color: var(--kt-fg);
   cursor: pointer;
 }
+
+/* ---------- 分段选择器 ---------- */
+
+.kt-segmented {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--kt-border);
+}
+
+.kt-segmented-item {
+  appearance: none;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--kt-muted);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 7px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.kt-segmented-item:hover {
+  color: var(--kt-fg);
+}
+
+.kt-segmented-active {
+  background: var(--kt-accent);
+  color: var(--kt-accent-fg);
+}
+
+.kt-segmented-active:hover {
+  color: var(--kt-accent-fg);
+}

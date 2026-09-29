@@ -1,10 +1,10 @@
 import { useState } from "preact/hooks";
 import type { FieldSchema } from "./types";
 import { getModule } from "./registry";
-import { moduleSettingsFor, updateItemProps } from "@/newtab/store";
-import type { WidgetInstance } from "@/shared/types";
+import { moduleSettingsFor, updateItemGlass, updateItemProps } from "@/newtab/store";
+import type { GlassEffect } from "@/shared/types";
 
-/** 实例级配置面板：由模块的 settingsSchema 自动生成。 */
+/** 通用字段渲染：由模块的 settingsSchema 自动生成。 */
 export function FieldEditor({
   schema,
   value,
@@ -84,7 +84,7 @@ export function FieldEditor({
   );
 }
 
-/** 模块实例设置弹窗（从右键菜单进入）。 */
+/** 模块实例设置弹窗（右键菜单进入）：模块配置 + 外观（玻璃效果）。 */
 export function InstanceSettingsDialog() {
   const instance = moduleSettingsFor.value;
   const [draft, setDraft] = useState<Record<string, unknown> | null>(null);
@@ -97,6 +97,7 @@ export function InstanceSettingsDialog() {
   const definition = getModule(instance.type);
   const schema = definition?.settingsSchema ?? [];
   const values = draft ?? instance.props;
+  const glassValue = instance.glass ?? "inherit";
 
   const close = () => {
     moduleSettingsFor.value = null;
@@ -112,12 +113,37 @@ export function InstanceSettingsDialog() {
     <>
       <div class="kt-modal-backdrop" onPointerDown={close} />
       <div class="kt-modal" data-testid="instance-settings">
-        <h3>{definition?.name ?? instance.type} · 设置</h3>
+        <h3>{definition?.name ?? "元件"} · 设置</h3>
+
         {schema.length > 0 ? (
-          <FieldEditor schema={schema} value={values} onChange={(patch) => setDraft({ ...values, ...patch })} />
+          <FieldEditor
+            schema={schema}
+            value={values}
+            onChange={(patch) => setDraft({ ...values, ...patch })}
+          />
         ) : (
-          <p class="kt-panel-hint">该模块没有可配置项。</p>
+          <p class="kt-panel-hint">该元件没有模块配置项。</p>
         )}
+
+        <label class="kt-field">
+          <span>玻璃效果</span>
+          <select
+            value={glassValue}
+            data-testid="item-glass"
+            onChange={(e) =>
+              updateItemGlass(
+                instance.id,
+                (e.target as HTMLSelectElement).value as GlassEffect | "inherit",
+              )
+            }
+          >
+            <option value="inherit">跟随全局</option>
+            <option value="none">无</option>
+            <option value="frost">磨砂玻璃</option>
+            <option value="liquid">液态玻璃</option>
+          </select>
+        </label>
+
         <div class="kt-modal-actions">
           <button class="kt-btn" onClick={close}>
             取消
@@ -129,9 +155,4 @@ export function InstanceSettingsDialog() {
       </div>
     </>
   );
-}
-
-export function hasSettings(instance: WidgetInstance): boolean {
-  const definition = getModule(instance.type);
-  return (definition?.settingsSchema?.length ?? 0) > 0;
 }

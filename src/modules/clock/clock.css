@@ -1,23 +1,26 @@
+/* 时钟模块：全部尺寸跟随元件大小（容器查询单位 cqw / cqh） */
 .kt-clock {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: clamp(2px, 3cqh, 18px);
   height: 100%;
   color: var(--kt-fg);
-  background: var(--kt-surface);
-  border: 1px solid var(--kt-border);
+  background: var(--kt-card-bg);
+  border: var(--kt-card-border);
   border-radius: var(--kt-radius);
-  backdrop-filter: blur(14px);
-  box-shadow: var(--kt-shadow);
+  backdrop-filter: var(--kt-card-blur);
+  -webkit-backdrop-filter: var(--kt-card-blur);
+  box-shadow: var(--kt-card-shadow);
 }
 
 .kt-clock-time {
   display: flex;
   align-items: baseline;
-  gap: 2px;
-  font-size: 44px;
+  gap: clamp(1px, 0.6cqw, 8px);
+  /* 基准：320×140 时约 48px */
+  font-size: clamp(14px, min(15cqw, 34cqh), 180px);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
@@ -29,17 +32,19 @@
 }
 
 .kt-clock-seconds {
-  font-size: 26px;
+  /* 基准：约 26px */
+  font-size: clamp(9px, min(8.1cqw, 18.6cqh), 96px);
   color: var(--kt-accent);
 }
 
 .kt-clock-suffix {
-  font-size: 16px;
-  margin-left: 6px;
+  font-size: clamp(10px, min(5cqw, 11.4cqh), 44px);
+  margin-left: clamp(3px, 1cqw, 14px);
   color: var(--kt-muted);
 }
 
 .kt-clock-date {
-  font-size: 13px;
+  /* 基准：约 13px */
+  font-size: clamp(10px, min(4.1cqw, 9.3cqh), 40px);
   color: var(--kt-muted);
 }

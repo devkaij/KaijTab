@@ -10,7 +10,6 @@ import {
   state,
   toggleLock,
 } from "@/newtab/store";
-import { hasSettings } from "@/newtab/module-host/InstanceSettings";
 
 const MENU_W = 168;
 const MENU_H = 280;
@@ -43,7 +42,7 @@ export function ContextMenuHost() {
         <button class="kt-menu-item" onClick={action(() => duplicateInstance(menu.itemId))}>
           复制
         </button>
-        {hasSettings(item) ? (
+        {true ? (
           <button
             class="kt-menu-item"
             onClick={action(() => (moduleSettingsFor.value = item))}

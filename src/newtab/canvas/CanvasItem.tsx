@@ -139,6 +139,8 @@ export function CanvasItem({ item }: { item: WidgetInstance }) {
   const vp = viewport.value;
   const rect = instanceRect(item, vp);
   const isSelected = selectedId.value === item.id;
+  const glassMode =
+    item.glass != null && item.glass !== "inherit" ? item.glass : state.value.settings.glassEffect;
 
   const startMove = (e: PointerEvent) => {
     if (!editing.value || item.locked || e.button !== 0) return;
@@ -242,6 +244,7 @@ export function CanvasItem({ item }: { item: WidgetInstance }) {
       class="kt-item"
       data-item-id={item.id}
       data-widget-type={item.type}
+      data-glass={glassMode}
       data-editing={editing.value ? "true" : "false"}
       data-selected={isSelected ? "true" : "false"}
       data-locked={item.locked ? "true" : "false"}

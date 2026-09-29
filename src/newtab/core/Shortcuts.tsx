@@ -1,21 +1,32 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { editing, removeShortcut, shortcutEditor, state } from "@/newtab/store";
 import type { Shortcut } from "@/shared/types";
+import { iconCandidates, ICON_LOAD_TIMEOUT_MS } from "./icons";
 
-export function faviconUrl(pageUrl: string, size = 64): string | null {
-  try {
-    const api = (chrome as unknown as { runtime?: { getURL?: (p: string) => string } }).runtime;
-    if (!api?.getURL) return null;
-    return `${api.getURL("/_favicon/")}?pageUrl=${encodeURIComponent(pageUrl)}&size=${size}`;
-  } catch {
-    return null;
-  }
-}
+export function ShortcutTile({ item }: { item: Shortcut }) {
+  const [index, setIndex] = useState(0);
+  const [loaded, setLoaded] = useState(false);
 
-function ShortcutTile({ item }: { item: Shortcut }) {
-  const [failed, setFailed] = useState(false);
-  const icon = item.icon ?? faviconUrl(item.url);
-  const showImage = icon != null && !failed;
+  useEffect(() => {
+    setIndex(0);
+    setLoaded(false);
+  }, [item.icon, item.url]);
+
+  const candidates = iconCandidates(item);
+  const src = index < candidates.length ? (candidates[index] ?? null) : null;
+
+  const advance = () => {
+    setLoaded(false);
+    setIndex((current) => current + 1);
+  };
+
+  // 候选图加载超时 → 换下一个；期间显示首字母，避免空白格
+  useEffect(() => {
+    if (!src || loaded) return;
+    const timer = setTimeout(advance, ICON_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src, loaded]);
 
   return (
     <div class="kt-sc-tile" data-testid={`shortcut-${item.id}`}>
@@ -28,11 +39,18 @@ function ShortcutTile({ item }: { item: Shortcut }) {
         }}
       >
         <span class="kt-sc-icon">
-          {showImage ? (
-            <img src={icon} alt="" onError={() => setFailed(true)} draggable={false} />
-          ) : (
+          {!loaded ? (
             <span class="kt-sc-letter">{(item.title || item.url)[0]?.toUpperCase() ?? "?"}</span>
-          )}
+          ) : null}
+          {src ? (
+            <img
+              src={src}
+              alt=""
+              draggable={false}
+              onLoad={() => setLoaded(true)}
+              onError={advance}
+            />
+          ) : null}
         </span>
         <span class="kt-sc-title">{item.title}</span>
       </a>
@@ -40,7 +58,14 @@ function ShortcutTile({ item }: { item: Shortcut }) {
         <button
           class="kt-sc-action"
           title="编辑"
-          onClick={() => (shortcutEditor.value = { id: item.id, title: item.title, url: item.url })}
+          onClick={() =>
+            shortcutEditor.value = {
+              id: item.id,
+              title: item.title,
+              url: item.url,
+              icon: item.icon ?? "",
+            }
+          }
         >
           <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
             <path
@@ -76,11 +101,11 @@ export function Shortcuts({ instanceId }: { instanceId: string; props: Record<st
       {editing.value ? (
         <button
           class="kt-sc-tile kt-sc-add kt-interactive"
-          onClick={() => (shortcutEditor.value = { id: null, title: "", url: "" })}
+          onClick={() => (shortcutEditor.value = { id: null, title: "", url: "", icon: "" })}
           data-testid="shortcut-add"
         >
           <span class="kt-sc-icon">
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="45%" height="45%" aria-hidden="true">
               <path fill="currentColor" d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2h6Z" />
             </svg>
           </span>

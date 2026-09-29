@@ -25,6 +25,38 @@ modules/<id>/
 4. **必须响应可见性**：定时器类模块用 `runtime.visibility.onChange` 在页面隐藏时停表
 5. **不要引入大型依赖**：模块 chunk 大小直接影响首次放置该模块时的加载速度
 
+## 尺寸自适应（重要）
+
+宿主在元件根节点上开了尺寸容器（`container-type: size`），所以模块内部**直接用容器查询单位**写尺寸，就能随元件大小自动缩放：
+
+```css
+.kt-my-widget .title {
+  /* 基准：默认尺寸下的期望值，再夹一个上下限 */
+  font-size: clamp(12px, min(4cqw, 10cqh), 48px);
+}
+.kt-my-widget { gap: clamp(2px, 3cqh, 18px); padding: clamp(6px, 2cqw, 24px); }
+```
+
+- `cqw` = 元件宽度的 1%，`cqh` = 高度的 1%
+- 用 `min(a cqw, b cqh)` 可以避免"扁元件/窄元件"下比例失真，外层再套 `clamp()` 设上下限
+- 参考实现：`src/modules/clock/clock.css`
+
+## 卡片与玻璃质感
+
+不要在模块里写死卡片背景。用宿主提供的令牌，这样全局的「无 / 磨砂玻璃 / 液态玻璃」切换才会生效：
+
+```css
+.kt-my-widget {
+  background: var(--kt-card-bg);          /* 无玻璃时是深色半透明；玻璃模式下自动透明 */
+  border: var(--kt-card-border);
+  border-radius: var(--kt-radius);
+  backdrop-filter: var(--kt-card-blur);
+  box-shadow: var(--kt-card-shadow);
+}
+```
+
+玻璃模式下由宿主在元件表面统一绘制效果，模块卡片自动透明，不需要模块做任何事。
+
 ## 创建新模块
 
 ```bash

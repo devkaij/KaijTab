@@ -4,8 +4,9 @@ test.describe("浏览器账号同步", () => {
   test("开启同步：写入分块快照；关闭：清理云端键", async ({ newTab }) => {
     await enterEditMode(newTab);
 
+    await newTab.getByTestId("open-settings").click();
     await newTab.getByTestId("sync-toggle").click();
-    await expect(newTab.getByTestId("sync-toggle")).toContainText("同步：开");
+    await expect(newTab.getByTestId("sync-toggle")).toContainText("同步已开启");
 
     await newTab.waitForTimeout(1200);
     const syncData = await newTab.evaluate(() => chrome.storage.sync.get(null));
@@ -26,6 +27,7 @@ test.describe("浏览器账号同步", () => {
     expect(snapshot.moduleData).toBeUndefined();
 
     // 变更后自动重新推送
+    await newTab.getByTestId("settings-panel").locator(".kt-panel-close").click();
     await dragBy(
       newTab,
       '.kt-item[data-widget-type="core:search"] [data-testid="drag-layer"]',
@@ -39,6 +41,7 @@ test.describe("浏览器账号同步", () => {
     expect(chunkAfter).toContain("layout");
 
     // 关闭并清理
+    await newTab.getByTestId("open-settings").click();
     await newTab.getByTestId("sync-toggle").click();
     await newTab.waitForTimeout(600);
     const afterDisable = await newTab.evaluate(() => chrome.storage.sync.get(null));

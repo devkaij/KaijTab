@@ -198,9 +198,19 @@ export function toggleLock(id: string): void {
   commit((s) => withItems(s, s.layout.items.map((i) => (i.id === id ? { ...i, locked: !i.locked } : i))));
 }
 
+/** 实例级玻璃效果覆盖 */
+export function updateItemGlass(id: string, glass: WidgetInstance["glass"]): void {
+  commit((s) => withItems(s, s.layout.items.map((i) => (i.id === id ? { ...i, glass } : i))));
+}
+
 /* ---------- 快捷方式 ---------- */
 
-export const shortcutEditor = signal<{ id: string | null; title: string; url: string } | null>(null);
+export const shortcutEditor = signal<{
+  id: string | null;
+  title: string;
+  url: string;
+  icon?: string;
+} | null>(null);
 
 export function normalizeShortcutUrl(url: string): string {
   const trimmed = url.trim();
@@ -208,15 +218,23 @@ export function normalizeShortcutUrl(url: string): string {
   return `https://${trimmed}`;
 }
 
-export function saveShortcut(input: { id: string | null; title: string; url: string }): void {
+export function saveShortcut(input: {
+  id: string | null;
+  title: string;
+  url: string;
+  icon?: string;
+}): void {
   const url = normalizeShortcutUrl(input.url);
   const title = input.title.trim() || url;
+  const icon = input.icon?.trim() ? input.icon.trim() : undefined;
   if (input.id) {
     commit((s) => ({
       ...s,
       shortcuts: {
         ...s.shortcuts,
-        items: s.shortcuts.items.map((i) => (i.id === input.id ? { ...i, title, url } : i)),
+        items: s.shortcuts.items.map((i) =>
+          i.id === input.id ? { ...i, title, url, icon } : i,
+        ),
       },
     }));
   } else {
@@ -225,7 +243,7 @@ export function saveShortcut(input: { id: string | null; title: string; url: str
       ...s,
       shortcuts: {
         ...s.shortcuts,
-        items: [...s.shortcuts.items, { id: newId("sc"), groupId, title, url }],
+        items: [...s.shortcuts.items, { id: newId("sc"), groupId, title, url, icon }],
       },
     }));
   }
@@ -249,6 +267,8 @@ export const wallpaperPanelOpen = signal(false);
 /* ---------- 模块 ---------- */
 
 export const moduleCenterOpen = signal(false);
+/** 全局设置面板 */
+export const settingsPanelOpen = signal(false);
 /** 正在打开设置弹窗的模块实例（右键菜单进入） */
 export const moduleSettingsFor = signal<WidgetInstance | null>(null);
 

@@ -4,14 +4,15 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: clamp(4px, 0.9cqw, 14px);
   height: 100%;
-  padding: 0 8px 0 12px;
-  background: var(--kt-surface);
-  border: 1px solid var(--kt-border);
+  padding: 0 clamp(8px, 1.6cqw, 24px);
+  background: var(--kt-card-bg);
+  border: var(--kt-card-border);
   border-radius: 999px;
-  backdrop-filter: blur(14px);
-  box-shadow: var(--kt-shadow);
+  backdrop-filter: var(--kt-card-blur);
+  -webkit-backdrop-filter: var(--kt-card-blur);
+  box-shadow: var(--kt-card-shadow);
 }
 
 .kt-search-engine-wrap {
@@ -27,8 +28,8 @@
   background: transparent;
   color: var(--kt-muted);
   font-family: inherit;
-  font-size: 13px;
-  padding: 6px 8px;
+  font-size: clamp(11px, min(2.3cqw, 22cqh), 20px);
+  padding: clamp(3px, 0.8cqw, 10px) clamp(5px, 1.2cqw, 16px);
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
@@ -75,7 +76,7 @@
   outline: none;
   color: var(--kt-fg);
   font-family: inherit;
-  font-size: 15px;
+  font-size: clamp(12px, min(2.7cqw, 26cqh), 24px);
 }
 
 .kt-search-input::placeholder {
@@ -87,12 +88,18 @@
   border: 0;
   background: transparent;
   color: var(--kt-muted);
-  width: 34px;
-  height: 34px;
+  width: clamp(24px, min(6cqw, 56cqh), 56px);
+  height: clamp(24px, min(6cqw, 56cqh), 56px);
+  flex: none;
   border-radius: 50%;
   display: grid;
   place-content: center;
   cursor: pointer;
+}
+
+.kt-search-go svg {
+  width: 55%;
+  height: 55%;
 }
 
 .kt-search-go:hover {
@@ -104,11 +111,11 @@
 
 .kt-shortcuts {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(72px, 11cqw, 150px), 1fr));
+  gap: clamp(6px, 1.3cqw, 20px);
   align-content: start;
   height: 100%;
-  padding: 4px;
+  padding: clamp(2px, 0.6cqw, 10px);
   overflow: hidden;
 }
 
@@ -117,8 +124,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 10px 4px 8px;
+  gap: clamp(2px, 0.9cqh, 10px);
+  padding: clamp(4px, 1.4cqh, 16px) 4px clamp(2px, 0.8cqh, 10px);
   border-radius: var(--kt-radius);
 }
 
@@ -137,29 +144,36 @@
 }
 
 .kt-sc-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--kt-surface-strong);
+  position: relative;
+  width: clamp(32px, 5.8cqw, 88px);
+  height: clamp(32px, 5.8cqw, 88px);
+  border-radius: clamp(8px, 1.6cqw, 22px);
+  /* 浅色底：绝大多数站点 favicon 是白底小图，浅底才不会变成白色方块 */
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   display: grid;
   place-content: center;
   overflow: hidden;
-  border: 1px solid var(--kt-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .kt-sc-icon img {
-  width: 28px;
-  height: 28px;
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 68%;
+  height: 68%;
+  object-fit: contain;
 }
 
 .kt-sc-letter {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--kt-accent);
+  font-size: clamp(13px, 2.4cqw, 32px);
+  font-weight: 700;
+  color: #1f2937;
 }
 
 .kt-sc-title {
-  font-size: 12px;
+  font-size: clamp(11px, 1.6cqw, 22px);
   color: var(--kt-fg);
   max-width: 100%;
   overflow: hidden;
@@ -185,8 +199,8 @@
   border: 0;
   background: var(--kt-surface-strong);
   color: var(--kt-muted);
-  width: 20px;
-  height: 20px;
+  width: clamp(18px, 2.4cqw, 26px);
+  height: clamp(18px, 2.4cqw, 26px);
   border-radius: 6px;
   display: grid;
   place-content: center;
@@ -219,6 +233,7 @@
 .kt-sc-add .kt-sc-icon {
   background: transparent;
   border-style: dashed;
+  box-shadow: none;
 }
 
 /* ---------- 通用弹窗 ---------- */
@@ -275,6 +290,38 @@
 
 .kt-field input:focus {
   border-color: var(--kt-accent);
+}
+
+/* 图标输入行：小预览 + 输入框 */
+.kt-icon-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kt-icon-input input {
+  flex: 1;
+}
+
+.kt-icon-preview {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-content: center;
+  border-radius: 9px;
+  border: 1px solid var(--kt-border);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--kt-accent);
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.kt-icon-preview img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
 }
 
 .kt-modal-actions {
