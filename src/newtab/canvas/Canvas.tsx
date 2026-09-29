@@ -1,4 +1,4 @@
-import { editing, selectedId, state } from "@/newtab/store";
+import { editing, guides, selectedId, state } from "@/newtab/store";
 import { CanvasItem } from "./CanvasItem";
 import { ContextMenuHost } from "./ContextMenu";
 import { GuidesOverlay } from "./Guides";
@@ -14,7 +14,7 @@ export function Canvas() {
         if (editing.value) selectedId.value = null;
       }}
     >
-      <GuidesOverlay />
+      <GuidesOverlay lines={guides.value} />
       {items.map((item) => (
         <CanvasItem key={item.id} item={item} />
       ))}

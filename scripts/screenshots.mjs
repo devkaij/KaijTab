@@ -142,15 +142,32 @@ await exitEdit();
 await page.waitForTimeout(1200);
 await shot("07-view-liquid.png");
 
-// 9. 大尺寸时钟（内容自适应）
+// 8. 网站导航：排列图标（拖动中，含参考线）
 await enterEdit();
+await page.locator('.kt-item[data-widget-type="core:shortcuts"]').click({ button: "right" });
+await page.getByTestId("menu-arrange-shortcuts").click();
+await page.waitForTimeout(400);
+const draggable = page.locator("[data-shortcut-tile]").nth(3);
+const tileBox = await draggable.boundingBox();
+await page.mouse.move(tileBox.x + tileBox.width / 2, tileBox.y + tileBox.height / 2);
+await page.mouse.down();
+await page.mouse.move(tileBox.x + tileBox.width / 2 - 40, tileBox.y + tileBox.height / 2 + 130, {
+  steps: 14,
+});
+await page.waitForTimeout(300);
+await shot("08-shortcuts-arrange.png");
+await page.mouse.up();
+await page.getByTestId("shortcut-arrange-done").click();
+await page.waitForTimeout(300);
+
+// 9. 大尺寸时钟（内容自适应）
 await page.evaluate(() => {
   const store = window.__kaijtab;
   const item = store.state.value.layout.items.find((i) => i.type === "clock");
   if (item) store.updateItemRect(item.id, { x: 470, y: 250, w: 660, h: 360 });
 });
 await page.waitForTimeout(600);
-await shot("08-clock-scaled.png");
+await shot("09-clock-scaled.png");
 
 await context.close();
 console.log(`截图已生成：${out}`);

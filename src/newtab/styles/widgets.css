@@ -119,6 +119,87 @@
   overflow: hidden;
 }
 
+/* ---------- 自由摆放模式 ---------- */
+
+.kt-shortcuts[data-free="true"] {
+  display: block;
+  position: relative;
+}
+
+.kt-shortcuts[data-free="true"] .kt-sc-tile {
+  position: absolute;
+  width: var(--kt-arrange-tile-w, clamp(72px, 11cqw, 150px));
+}
+
+.kt-shortcuts[data-arranging="true"] .kt-sc-tile {
+  cursor: grab;
+  touch-action: none;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.kt-shortcuts[data-arranging="true"] .kt-sc-tile:active {
+  cursor: grabbing;
+}
+
+.kt-shortcuts[data-arranging="true"] .kt-sc-actions {
+  display: none;
+}
+
+.kt-shortcuts[data-arranging="true"] .kt-sc-link {
+  pointer-events: none;
+}
+
+.kt-sc-arrange-bar {
+  position: absolute;
+  top: clamp(2px, 1cqh, 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  padding-left: 8px;
+  border-radius: 10px;
+  background: var(--kt-surface-strong);
+  border: 1px solid var(--kt-border);
+  box-shadow: var(--kt-shadow);
+  backdrop-filter: blur(12px);
+  white-space: nowrap;
+}
+
+.kt-sc-arrange-hint {
+  font-size: clamp(10px, 1.6cqw, 12px);
+  color: var(--kt-muted);
+  padding-right: 4px;
+}
+
+.kt-sc-arrange-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--kt-fg);
+  font-family: inherit;
+  font-size: clamp(10px, 1.6cqw, 12px);
+  padding: 4px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.kt-sc-arrange-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.kt-sc-arrange-primary {
+  background: var(--kt-accent);
+  color: var(--kt-accent-fg);
+}
+
+.kt-sc-arrange-primary:hover {
+  background: var(--kt-accent);
+  filter: brightness(1.1);
+}
+
 .kt-sc-tile {
   position: relative;
   display: flex;

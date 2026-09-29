@@ -1,4 +1,5 @@
 import {
+  arrangingShortcuts,
   bringToFront,
   contextMenu,
   duplicateInstance,
@@ -39,6 +40,15 @@ export function ContextMenuHost() {
         <button class="kt-menu-item" onClick={action(() => sendToBack(menu.itemId))}>
           置底
         </button>
+        {item.type === "core:shortcuts" ? (
+          <button
+            class="kt-menu-item"
+            onClick={action(() => (arrangingShortcuts.value = item.id))}
+            data-testid="menu-arrange-shortcuts"
+          >
+            排列图标
+          </button>
+        ) : null}
         <button class="kt-menu-item" onClick={action(() => duplicateInstance(menu.itemId))}>
           复制
         </button>

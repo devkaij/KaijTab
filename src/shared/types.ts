@@ -42,6 +42,11 @@ export interface Shortcut {
   url: string;
   /** 自定义图标（data URL 或 OPFS 路径），缺省走 favicon 链 */
   icon?: string;
+  /**
+   * 在网站导航元件内的自由摆放位置（0~1，相对元件内容区左上角）。
+   * 缺省表示未摆放，跟随自动网格；一旦任意图标有位置，整个导航进入自由摆放模式。
+   */
+  pos?: { x: number; y: number };
 }
 
 export interface ShortcutsState {

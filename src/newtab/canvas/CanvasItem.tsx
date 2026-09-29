@@ -3,6 +3,7 @@ import type { WidgetInstance } from "@/shared/types";
 import { clampToViewport, instanceRect, type Rect } from "./geometry";
 import { computeSnap, type GuideLine, type SnapActiveEdges } from "./snapping";
 import {
+  arrangingShortcuts,
   editing,
   guides,
   otherRects,
@@ -245,6 +246,7 @@ export function CanvasItem({ item }: { item: WidgetInstance }) {
       data-item-id={item.id}
       data-widget-type={item.type}
       data-glass={glassMode}
+      data-arranging={arrangingShortcuts.value === item.id ? "true" : "false"}
       data-editing={editing.value ? "true" : "false"}
       data-selected={isSelected ? "true" : "false"}
       data-locked={item.locked ? "true" : "false"}

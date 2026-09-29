@@ -67,6 +67,15 @@
   pointer-events: auto;
 }
 
+/* 排列网站图标模式：元件本身不可拖，内容可交互 */
+.kt-item[data-arranging="true"] .kt-drag-layer {
+  pointer-events: none;
+}
+
+.kt-item[data-arranging="true"] .kt-widget {
+  pointer-events: auto;
+}
+
 .kt-widget-missing {
   display: grid;
   place-content: center;

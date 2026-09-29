@@ -1,5 +1,6 @@
 import { useEffect } from "preact/hooks";
 import {
+  arrangingShortcuts,
   editing,
   nudgeSelected,
   redo,
@@ -33,6 +34,10 @@ export function useKeyboard(): void {
       if (e.key === "Escape") {
         if (contextMenu.value) {
           contextMenu.value = null;
+          return;
+        }
+        if (arrangingShortcuts.value) {
+          arrangingShortcuts.value = null;
           return;
         }
         if (editing.value) {

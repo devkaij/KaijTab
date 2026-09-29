@@ -11,6 +11,7 @@ import { createHistory } from "./canvas/history";
 import { instanceRect, toNormalized, type Rect, type Size } from "./canvas/geometry";
 import type { GuideLine } from "./canvas/snapping";
 import { removeWallpaperFiles } from "./core/wallpaper/opfs";
+import { nextFreePos } from "./core/shortcut-layout";
 import { chromeSync } from "@/shared/storage/kv";
 import {
   applySyncSnapshot,
@@ -223,6 +224,7 @@ export function normalizeShortcutUrl(url: string): string {
   return `https://${trimmed}`;
 }
 
+/** 快捷方式新增/编辑时，若导航已进入自由摆放模式，新图标自动落到下方一行 */
 export function saveShortcut(input: {
   id: string | null;
   title: string;
@@ -244,11 +246,12 @@ export function saveShortcut(input: {
     }));
   } else {
     const groupId = s0GroupId();
+    const pos = nextFreePos(state.value.shortcuts.items);
     commit((s) => ({
       ...s,
       shortcuts: {
         ...s.shortcuts,
-        items: [...s.shortcuts.items, { id: newId("sc"), groupId, title, url, icon }],
+        items: [...s.shortcuts.items, { id: newId("sc"), groupId, title, url, icon, ...(pos ? { pos } : {}) }],
       },
     }));
   }
@@ -262,6 +265,48 @@ export function removeShortcut(id: string): void {
   commit((s) => ({
     ...s,
     shortcuts: { ...s.shortcuts, items: s.shortcuts.items.filter((i) => i.id !== id) },
+  }));
+}
+
+/* ---------- 网站导航图标摆放 ---------- */
+
+/** 正在"排列图标"的网站导航元件实例 id */
+export const arrangingShortcuts = signal<string | null>(null);
+
+export function setShortcutPositions(
+  updates: Array<{ id: string; pos: { x: number; y: number } }>,
+): void {
+  if (updates.length === 0) return;
+  const map = new Map(updates.map((u) => [u.id, u.pos]));
+  commit((s) => ({
+    ...s,
+    shortcuts: {
+      ...s.shortcuts,
+      items: s.shortcuts.items.map((i) => {
+        const pos = map.get(i.id);
+        return pos ? { ...i, pos } : i;
+      }),
+    },
+  }));
+}
+
+export function setShortcutPos(id: string, pos: { x: number; y: number }): void {
+  setShortcutPositions([{ id, pos }]);
+}
+
+/** 恢复自动网格排列 */
+export function clearShortcutPositions(): void {
+  commit((s) => ({
+    ...s,
+    shortcuts: {
+      ...s.shortcuts,
+      items: s.shortcuts.items.map((item) => {
+        if (item.pos == null) return item;
+        const next = { ...item };
+        delete next.pos;
+        return next;
+      }),
+    },
   }));
 }
 
