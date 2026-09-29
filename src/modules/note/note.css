@@ -1,0 +1,43 @@
+.kt-note {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  color: var(--kt-fg);
+  background: var(--kt-card-bg);
+  border: var(--kt-card-border);
+  border-radius: var(--kt-radius);
+  backdrop-filter: var(--kt-card-blur);
+  -webkit-backdrop-filter: var(--kt-card-blur);
+  box-shadow: var(--kt-card-shadow);
+}
+
+.kt-note-area {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  padding: clamp(8px, 2.4cqw, 20px);
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--kt-fg);
+  font-family: inherit;
+  line-height: 1.65;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.kt-note-area::placeholder {
+  color: var(--kt-muted);
+}
+
+.kt-note-foot {
+  flex: none;
+  padding: 0 clamp(8px, 2.4cqw, 20px) clamp(4px, 1.4cqh, 12px);
+  font-size: clamp(10px, 1.5cqw, 14px);
+  color: var(--kt-muted);
+  text-align: right;
+  user-select: none;
+}

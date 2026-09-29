@@ -32,6 +32,12 @@ export type FieldSchema =
   | {
       key: string;
       label: string;
+      type: "date";
+      help?: string;
+    }
+  | {
+      key: string;
+      label: string;
       type: "select";
       options: Array<{ value: string; label: string }>;
       help?: string;

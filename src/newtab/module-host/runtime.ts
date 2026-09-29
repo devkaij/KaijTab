@@ -21,18 +21,24 @@ export function createRuntime(moduleId: string, instanceId: string): ModuleRunti
         return (data?.[key] as T | undefined) ?? null;
       },
       set(key: string, value: unknown): void {
-        commit((s) => {
-          const current = (s.moduleData[namespace] as Record<string, unknown> | undefined) ?? {};
-          return { ...s, moduleData: { ...s.moduleData, [namespace]: { ...current, [key]: value } } };
-        });
+        commit(
+          (s) => {
+            const current = (s.moduleData[namespace] as Record<string, unknown> | undefined) ?? {};
+            return { ...s, moduleData: { ...s.moduleData, [namespace]: { ...current, [key]: value } } };
+          },
+          { skipHistory: true, skipSync: true, flush: true },
+        );
       },
       remove(key: string): void {
-        commit((s) => {
-          const current = (s.moduleData[namespace] as Record<string, unknown> | undefined) ?? {};
-          const next = { ...current };
-          delete next[key];
-          return { ...s, moduleData: { ...s.moduleData, [namespace]: next } };
-        });
+        commit(
+          (s) => {
+            const current = (s.moduleData[namespace] as Record<string, unknown> | undefined) ?? {};
+            const next = { ...current };
+            delete next[key];
+            return { ...s, moduleData: { ...s.moduleData, [namespace]: next } };
+          },
+          { skipHistory: true, skipSync: true, flush: true },
+        );
       },
     },
 

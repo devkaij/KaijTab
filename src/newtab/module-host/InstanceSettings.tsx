@@ -67,6 +67,19 @@ export function FieldEditor({
             </label>
           );
         }
+        if (field.type === "date") {
+          return (
+            <label key={field.key} class="kt-field">
+              <span>{field.label}</span>
+              <input
+                type="date"
+                value={typeof current === "string" ? current : ""}
+                onInput={(e) => onChange({ [field.key]: (e.target as HTMLInputElement).value })}
+                data-testid={`field-${field.key}`}
+              />
+            </label>
+          );
+        }
         return (
           <label key={field.key} class="kt-field">
             <span>{field.label}</span>

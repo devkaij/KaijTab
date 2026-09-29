@@ -1,5 +1,5 @@
 import { Component, type ComponentChildren } from "preact";
-import { useEffect, useState } from "preact/hooks";
+import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import type { ComponentType } from "preact";
 import { updateItemProps } from "@/newtab/store";
 import { getModule } from "./registry";
@@ -120,7 +120,12 @@ export function ModuleHost({
   }
 
   const Component = state.Component;
-  const runtime = createRuntime(moduleId, instanceId);
+  // runtime / updateProps 身份保持稳定，避免模块的 effect 每次全局状态变化都重跑
+  const runtime = useMemo(() => createRuntime(moduleId, instanceId), [moduleId, instanceId]);
+  const updateProps = useCallback(
+    (patch: Record<string, unknown>) => updateItemProps(instanceId, patch),
+    [instanceId],
+  );
 
   return (
     <ModuleErrorBoundary onRetry={() => setAttempt((a) => a + 1)}>
@@ -128,7 +133,7 @@ export function ModuleHost({
         <Component
           instanceId={instanceId}
           props={props}
-          updateProps={(patch: Record<string, unknown>) => updateItemProps(instanceId, patch)}
+          updateProps={updateProps}
           runtime={runtime}
         />
       </div>

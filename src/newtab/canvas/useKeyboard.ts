@@ -20,6 +20,9 @@ export function useKeyboard(): void {
         target != null &&
         (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
 
+      // 正在输入时完全不拦截：Ctrl+Z 撤销文字、Delete 删字符都还给输入框
+      if (isEditable) return;
+
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
         if (e.shiftKey) redo();
@@ -39,7 +42,7 @@ export function useKeyboard(): void {
         }
       }
 
-      if (isEditable || !editing.value) return;
+      if (!editing.value) return;
 
       if (e.key === "Delete" || e.key === "Backspace") {
         const item = state.value.layout.items.find((i) => i.id === selectedId.value);

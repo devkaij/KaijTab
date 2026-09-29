@@ -1,64 +1,8 @@
-import { useEffect, useRef, useState } from "preact/hooks";
 import { editing, removeShortcut, shortcutEditor, state } from "@/newtab/store";
 import type { Shortcut } from "@/shared/types";
-import { iconCandidates, ICON_LOAD_TIMEOUT_MS } from "./icons";
+import { IconProbe } from "@/shared/ui/IconProbe";
 
 export function ShortcutTile({ item }: { item: Shortcut }) {
-  const [index, setIndex] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
-
-  useEffect(() => {
-    setIndex(0);
-    setLoaded(false);
-  }, [item.icon, item.url]);
-
-  const candidates = iconCandidates(item);
-  const src = index < candidates.length ? (candidates[index] ?? null) : null;
-
-  const advance = () => {
-    setLoaded(false);
-    setIndex((current) => current + 1);
-  };
-
-  /**
-   * 图片探测：事件 + 立即检查 + 轮询 + 超时四重保险。
-   * （失败请求可能早于监听器挂载就完成，只靠 onError 会漏掉 → 卡出空白格）
-   */
-  useEffect(() => {
-    const img = imgRef.current;
-    if (!img || !src) return;
-
-    let settled = false;
-    const settle = (ok: boolean) => {
-      if (settled) return;
-      settled = true;
-      if (ok) setLoaded(true);
-      else advance();
-    };
-
-    const onLoad = () => settle(true);
-    const onError = () => settle(false);
-    const check = () => {
-      if (settled || !img.complete) return;
-      settle(img.naturalWidth > 0);
-    };
-
-    img.addEventListener("load", onLoad);
-    img.addEventListener("error", onError);
-    check();
-    const interval = setInterval(check, 500);
-    const timer = setTimeout(() => settle(false), ICON_LOAD_TIMEOUT_MS);
-
-    return () => {
-      img.removeEventListener("load", onLoad);
-      img.removeEventListener("error", onError);
-      clearInterval(interval);
-      clearTimeout(timer);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [src]);
-
   return (
     <div class="kt-sc-tile" data-testid={`shortcut-${item.id}`}>
       <a
@@ -70,10 +14,12 @@ export function ShortcutTile({ item }: { item: Shortcut }) {
         }}
       >
         <span class="kt-sc-icon">
-          {!loaded ? (
-            <span class="kt-sc-letter">{(item.title || item.url)[0]?.toUpperCase() ?? "?"}</span>
-          ) : null}
-          {src ? <img ref={imgRef} src={src} alt="" draggable={false} /> : null}
+          <IconProbe
+            url={item.url}
+            icon={item.icon}
+            letter={item.title}
+            letterClassName="kt-sc-letter"
+          />
         </span>
         <span class="kt-sc-title">{item.title}</span>
       </a>

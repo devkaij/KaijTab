@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { iconCandidates, ICON_LOAD_TIMEOUT_MS } from "@/newtab/core/icons";
+import { iconCandidates, ICON_LOAD_TIMEOUT_MS } from "@/shared/utils/icons";
 
 describe("iconCandidates", () => {
   const base = { url: "https://www.bilibili.com/video/x", icon: undefined };

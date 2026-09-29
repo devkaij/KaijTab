@@ -1,0 +1,163 @@
+.kt-todo {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  color: var(--kt-fg);
+  background: var(--kt-card-bg);
+  border: var(--kt-card-border);
+  border-radius: var(--kt-radius);
+  backdrop-filter: var(--kt-card-blur);
+  -webkit-backdrop-filter: var(--kt-card-blur);
+  box-shadow: var(--kt-card-shadow);
+}
+
+.kt-todo-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: clamp(6px, 1.8cqw, 16px) clamp(10px, 2.6cqw, 20px) 0;
+  font-size: clamp(11px, 1.9cqw, 15px);
+  color: var(--kt-muted);
+  user-select: none;
+}
+
+.kt-todo-clear {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--kt-muted);
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+
+.kt-todo-clear:hover {
+  color: var(--kt-fg);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.kt-todo-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: clamp(4px, 1.4cqw, 12px) clamp(6px, 1.6cqw, 14px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1px, 0.6cqh, 6px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.kt-todo-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(5px, 1.4cqw, 12px);
+  padding: clamp(3px, 1cqh, 8px) clamp(4px, 1.2cqw, 10px);
+  border-radius: 8px;
+}
+
+.kt-todo-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.kt-todo-check {
+  flex: none;
+  width: clamp(13px, 2.4cqw, 20px);
+  height: clamp(13px, 2.4cqw, 20px);
+  accent-color: var(--kt-accent);
+  cursor: pointer;
+}
+
+.kt-todo-text {
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(12px, 2.1cqw, 17px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-todo-done {
+  color: var(--kt-muted);
+  text-decoration: line-through;
+}
+
+.kt-todo-remove {
+  flex: none;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--kt-muted);
+  font-size: clamp(10px, 1.8cqw, 14px);
+  line-height: 1;
+  padding: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.kt-todo-row:hover .kt-todo-remove {
+  opacity: 1;
+}
+
+.kt-todo-remove:hover {
+  color: var(--kt-danger);
+  background: rgba(248, 81, 73, 0.12);
+}
+
+.kt-todo-empty {
+  margin: 4px 0;
+  padding: 0 6px;
+  font-size: clamp(11px, 1.9cqw, 14px);
+  color: var(--kt-muted);
+}
+
+.kt-todo-add {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: clamp(4px, 1.4cqw, 12px) clamp(8px, 2cqw, 16px) clamp(6px, 1.8cqw, 16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kt-todo-input {
+  flex: 1;
+  min-width: 0;
+  height: clamp(24px, 6.4cqh, 38px);
+  padding: 0 clamp(6px, 1.6cqw, 12px);
+  border: 1px solid var(--kt-border);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--kt-fg);
+  font-family: inherit;
+  font-size: clamp(12px, 2cqw, 16px);
+  outline: none;
+}
+
+.kt-todo-input:focus {
+  border-color: var(--kt-accent);
+}
+
+.kt-todo-add-btn {
+  flex: none;
+  appearance: none;
+  width: clamp(24px, 6.4cqh, 38px);
+  height: clamp(24px, 6.4cqh, 38px);
+  border: 0;
+  border-radius: 8px;
+  background: var(--kt-accent);
+  color: var(--kt-accent-fg);
+  font-size: clamp(14px, 2.6cqw, 20px);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.kt-todo-add-btn:hover {
+  filter: brightness(1.1);
+}

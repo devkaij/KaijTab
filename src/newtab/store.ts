@@ -50,6 +50,10 @@ export interface CommitOptions {
   key?: string;
   /** 显式跳过历史压栈 */
   skipHistory?: boolean;
+  /** 跳过同步推送（模块私有数据等无需同步的写入） */
+  skipSync?: boolean;
+  /** 立即落盘（模块数据等耐久性敏感的写入），不走防抖 */
+  flush?: boolean;
 }
 
 export function commit(mutate: (draft: RootState) => RootState, opts: CommitOptions = {}): void {
@@ -61,8 +65,9 @@ export function commit(mutate: (draft: RootState) => RootState, opts: CommitOpti
   }
   lastCommit = { key: opts.key ?? "", at: now };
   state.value = mutate(state.value);
-  saver.save();
-  scheduleSyncPush();
+  if (opts.flush) void saver.flush();
+  else saver.save();
+  if (!opts.skipSync) scheduleSyncPush();
   canUndo.value = history.canUndo();
   canRedo.value = history.canRedo();
 }
@@ -454,5 +459,10 @@ export async function bootstrap(): Promise<void> {
 
   window.addEventListener("resize", () => {
     viewport.value = { w: window.innerWidth, h: window.innerHeight };
+  });
+
+  // 关闭/刷新前尽力把未落盘的变更写出去
+  window.addEventListener("pagehide", () => {
+    void saver.flush();
   });
 }

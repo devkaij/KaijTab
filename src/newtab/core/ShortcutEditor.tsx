@@ -1,6 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import { saveShortcut, shortcutEditor } from "@/newtab/store";
-import { iconCandidates } from "./icons";
+import { iconCandidates } from "@/shared/utils/icons";
 
 /** 快捷方式新增/编辑弹窗：挂在 App 顶层，避免被元件容器裁切。 */
 export function ShortcutEditor() {

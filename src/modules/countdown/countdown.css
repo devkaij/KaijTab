@@ -1,0 +1,62 @@
+.kt-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(2px, 2.2cqh, 12px);
+  height: 100%;
+  padding: clamp(6px, 2.2cqw, 18px);
+  color: var(--kt-fg);
+  background: var(--kt-card-bg);
+  border: var(--kt-card-border);
+  border-radius: var(--kt-radius);
+  backdrop-filter: var(--kt-card-blur);
+  -webkit-backdrop-filter: var(--kt-card-blur);
+  box-shadow: var(--kt-card-shadow);
+  text-align: center;
+}
+
+.kt-countdown-title {
+  font-size: clamp(11px, min(3.4cqw, 8cqh), 26px);
+  color: var(--kt-muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-countdown-days {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(3px, 1.2cqw, 12px);
+  line-height: 1;
+}
+
+.kt-countdown-number {
+  font-size: clamp(28px, min(20cqw, 44cqh), 160px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--kt-accent);
+}
+
+.kt-countdown-unit {
+  font-size: clamp(12px, min(5.4cqw, 12cqh), 44px);
+  color: var(--kt-fg);
+  opacity: 0.9;
+}
+
+.kt-countdown-today {
+  font-size: clamp(18px, min(9cqw, 20cqh), 72px);
+  font-weight: 700;
+  color: var(--kt-accent);
+}
+
+.kt-countdown-date {
+  font-size: clamp(10px, min(3cqw, 6.6cqh), 22px);
+  color: var(--kt-muted);
+}
+
+.kt-countdown-empty {
+  color: var(--kt-muted);
+  font-size: clamp(11px, min(3.6cqw, 8cqh), 20px);
+}
