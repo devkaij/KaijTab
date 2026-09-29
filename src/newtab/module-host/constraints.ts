@@ -1,4 +1,5 @@
-/** 元件尺寸约束：核心内置元件在此声明，模块元件由注册表提供（M5 接入）。 */
+/** 元件尺寸约束：核心内置元件在此声明，模块元件由注册表提供。 */
+import { getModule, moduleConstraints } from "./registry";
 
 export interface ItemConstraints {
   minW: number;
@@ -22,5 +23,9 @@ const coreConstraints: Record<string, Partial<ItemConstraints>> = {
 };
 
 export function getItemConstraints(type: string): ItemConstraints {
+  const definition = getModule(type);
+  if (definition) {
+    return { ...DEFAULTS, ...moduleConstraints(definition) };
+  }
   return { ...DEFAULTS, ...(coreConstraints[type] ?? {}) };
 }

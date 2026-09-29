@@ -1,4 +1,13 @@
-import { canRedo, canUndo, editing, redo, setEditing, undo } from "@/newtab/store";
+import {
+  canRedo,
+  canUndo,
+  editing,
+  moduleCenterOpen,
+  redo,
+  setEditing,
+  undo,
+  wallpaperPanelOpen,
+} from "@/newtab/store";
 
 export function Toolbar() {
   if (!editing.value) {
@@ -31,6 +40,21 @@ export function Toolbar() {
       </button>
       <button class="kt-btn" disabled={!canRedo.value} onClick={redo} data-testid="redo">
         重做
+      </button>
+      <div class="kt-toolbar-sep" />
+      <button
+        class="kt-btn"
+        onClick={() => (moduleCenterOpen.value = !moduleCenterOpen.value)}
+        data-testid="open-module-center"
+      >
+        模块
+      </button>
+      <button
+        class="kt-btn"
+        onClick={() => (wallpaperPanelOpen.value = !wallpaperPanelOpen.value)}
+        data-testid="open-wallpaper-panel"
+      >
+        壁纸
       </button>
       <span class="kt-toolbar-hint">拖动移动 · 角/边缩放 · 按住 Alt 关闭吸附 · 方向键微调</span>
     </div>

@@ -7,6 +7,7 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
+  z-index: 1;
 }
 
 /* ---------- 元件 ---------- */
@@ -45,6 +46,13 @@
 
 .kt-item[data-editing="true"] .kt-widget {
   pointer-events: none;
+  position: relative;
+  z-index: 2;
+}
+
+/* 编辑态里明确标记为可交互的控件（如快捷方式的编辑/添加按钮）依然可点 */
+.kt-item[data-editing="true"] .kt-interactive {
+  pointer-events: auto;
 }
 
 .kt-widget-missing {
@@ -68,6 +76,7 @@
   inset: 0;
   cursor: grab;
   border-radius: var(--kt-radius);
+  z-index: 1;
 }
 
 .kt-drag-layer:active {
@@ -83,7 +92,7 @@
   background: var(--kt-accent-fg);
   border: 1.5px solid var(--kt-accent);
   border-radius: 3px;
-  z-index: 2;
+  z-index: 4;
 }
 
 .kt-handle-nw { left: -5px; top: -5px; cursor: nwse-resize; }

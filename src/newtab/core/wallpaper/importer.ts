@@ -1,7 +1,7 @@
 /** 壁纸导入流水线：校验 → 流式拷贝进 OPFS → 生成缩略图 → 产出索引记录。 */
 import type { WallpaperKind, WallpaperRecord } from "@/shared/types";
 import { newId } from "@/shared/utils/ids";
-import { THUMB_DIR, WALLPAPER_DIR, estimateUsage, writeBlob } from "./opfs";
+import { THUMB_DIR, WALLPAPER_DIR, estimateUsage, removeFile, writeBlob } from "./opfs";
 
 export const WARN_SIZE = 300 * 1024 * 1024;
 export const REFUSE_SIZE = 500 * 1024 * 1024;
@@ -123,7 +123,7 @@ function drawToJpeg(
   const scale = Math.min(1, maxWidth / Math.max(1, width));
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(2, Math.round(width * scale));
-  canvas.height = Math.max(2, Math.round((height * scale * 9) / 16 / (16 / 9)) || Math.round(height * scale));
+  canvas.height = Math.max(2, Math.round(height * scale));
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("canvas 上下文不可用");
   ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
@@ -186,7 +186,6 @@ export async function importWallpaperFile(
     await writeBlob(THUMB_DIR, `${id}.jpg`, thumb);
   } catch (error) {
     // 缩略图失败不阻断导入，但记录需要缩略图存在；清理后抛错让用户重试
-    const { removeFile } = await import("./opfs");
     await removeFile(WALLPAPER_DIR, `${id}.${extension}`);
     throw error;
   }

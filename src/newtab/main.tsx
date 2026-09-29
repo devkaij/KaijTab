@@ -5,6 +5,8 @@ import "./styles/theme.css";
 import "./styles/global.css";
 import "./styles/canvas.css";
 import "./styles/widgets.css";
+import "./styles/wallpaper.css";
+import "./styles/module-host.css";
 
 // 调试/E2E 入口：自用项目，保留可观测性
 declare global {

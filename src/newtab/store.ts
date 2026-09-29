@@ -10,6 +10,7 @@ import { newId } from "@/shared/utils/ids";
 import { createHistory } from "./canvas/history";
 import { instanceRect, toNormalized, type Rect, type Size } from "./canvas/geometry";
 import type { GuideLine } from "./canvas/snapping";
+import { removeWallpaperFiles } from "./core/wallpaper/opfs";
 
 export const state = signal<RootState>(createDefaultState());
 export const viewport = signal<Size>({
@@ -226,6 +227,43 @@ export function removeShortcut(id: string): void {
   commit((s) => ({
     ...s,
     shortcuts: { ...s.shortcuts, items: s.shortcuts.items.filter((i) => i.id !== id) },
+  }));
+}
+
+/* ---------- 壁纸 ---------- */
+
+export const wallpaperPanelOpen = signal(false);
+
+/* ---------- 模块 ---------- */
+
+export const moduleCenterOpen = signal(false);
+/** 正在打开设置弹窗的模块实例（右键菜单进入） */
+export const moduleSettingsFor = signal<WidgetInstance | null>(null);
+
+export function updateSettings(patch: Partial<import("@/shared/types").SettingsState>): void {
+  commit((s) => ({ ...s, settings: { ...s.settings, ...patch } }));
+}
+
+export function addWallpaperRecord(record: import("@/shared/types").WallpaperRecord): void {
+  commit((s) => ({
+    ...s,
+    wallpaperLibrary: [...s.wallpaperLibrary, record],
+    wallpaperCurrent: record.id,
+  }));
+}
+
+export function setCurrentWallpaper(id: string | null): void {
+  commit((s) => ({ ...s, wallpaperCurrent: id }));
+}
+
+export async function dropWallpaper(id: string): Promise<void> {
+  const record = state.value.wallpaperLibrary.find((w) => w.id === id);
+  if (!record) return;
+  await removeWallpaperFiles(record);
+  commit((s) => ({
+    ...s,
+    wallpaperLibrary: s.wallpaperLibrary.filter((w) => w.id !== id),
+    wallpaperCurrent: s.wallpaperCurrent === id ? null : s.wallpaperCurrent,
   }));
 }
 

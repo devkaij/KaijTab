@@ -1,0 +1,45 @@
+.kt-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  color: var(--kt-fg);
+  background: var(--kt-surface);
+  border: 1px solid var(--kt-border);
+  border-radius: var(--kt-radius);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--kt-shadow);
+}
+
+.kt-clock-time {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 44px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.kt-clock-colon {
+  opacity: 0.6;
+}
+
+.kt-clock-seconds {
+  font-size: 26px;
+  color: var(--kt-accent);
+}
+
+.kt-clock-suffix {
+  font-size: 16px;
+  margin-left: 6px;
+  color: var(--kt-muted);
+}
+
+.kt-clock-date {
+  font-size: 13px;
+  color: var(--kt-muted);
+}

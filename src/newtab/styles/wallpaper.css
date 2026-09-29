@@ -1,0 +1,271 @@
+/* ---------- 壁纸层 ---------- */
+
+.kt-wallpaper {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #090c10;
+}
+
+.kt-wallpaper-default {
+  background: radial-gradient(120% 120% at 20% 0%, #16233a 0%, #0d1117 55%, #090c10 100%);
+}
+
+.kt-wallpaper-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.kt-fade-in {
+  animation: kt-fade-in 320ms ease;
+}
+
+@keyframes kt-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------- 侧边面板 ---------- */
+
+.kt-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 15000;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.kt-panel {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  width: 400px;
+  z-index: 15001;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow: auto;
+  background: var(--kt-surface-strong);
+  border: 1px solid var(--kt-border);
+  border-radius: var(--kt-radius);
+  box-shadow: var(--kt-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.kt-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kt-panel-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.kt-panel-close {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--kt-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.kt-panel-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--kt-fg);
+}
+
+.kt-panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kt-panel-section h4 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--kt-fg);
+}
+
+.kt-panel-grow {
+  flex: 1;
+}
+
+.kt-panel-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.kt-panel-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--kt-muted);
+  line-height: 1.6;
+}
+
+.kt-panel-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--kt-border);
+  font-size: 12px;
+  color: var(--kt-muted);
+}
+
+/* ---------- 导入进度与错误 ---------- */
+
+.kt-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--kt-muted);
+  margin-bottom: 6px;
+}
+
+.kt-progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.kt-progress-bar {
+  height: 100%;
+  background: var(--kt-accent);
+  transition: width 120ms ease;
+}
+
+.kt-alert {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: var(--kt-radius-sm);
+  border: 1px solid rgba(248, 81, 73, 0.4);
+  background: rgba(248, 81, 73, 0.1);
+  font-size: 12px;
+  color: var(--kt-fg);
+}
+
+.kt-alert-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kt-alert-close {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--kt-muted);
+  cursor: pointer;
+}
+
+/* ---------- 壁纸库网格 ---------- */
+
+.kt-wp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.kt-wp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border-radius: var(--kt-radius-sm);
+  border: 1px solid var(--kt-border);
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+}
+
+.kt-wp-card-active {
+  border-color: var(--kt-accent);
+  box-shadow: 0 0 0 1px var(--kt-accent) inset;
+}
+
+.kt-wp-apply {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.kt-wp-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  display: block;
+}
+
+.kt-wp-thumb-empty,
+.kt-wp-thumb-default {
+  background: radial-gradient(120% 120% at 20% 0%, #1c2c47 0%, #0d1117 60%);
+}
+
+.kt-wp-name {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-wp-meta {
+  font-size: 11px;
+  color: var(--kt-muted);
+}
+
+.kt-wp-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.kt-wp-action {
+  appearance: none;
+  flex: 1;
+  border: 1px solid var(--kt-border);
+  background: transparent;
+  color: var(--kt-fg);
+  font-family: inherit;
+  font-size: 11px;
+  padding: 4px 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.kt-wp-action:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.kt-wp-action-danger:hover {
+  background: var(--kt-danger);
+  border-color: var(--kt-danger);
+}
+
+.kt-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--kt-fg);
+  cursor: pointer;
+}
