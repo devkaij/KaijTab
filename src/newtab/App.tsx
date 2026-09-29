@@ -1,14 +1,25 @@
-import { useEffect } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
+import { bootstrap, editing } from "./store";
+import { Canvas } from "./canvas/Canvas";
+import { Toolbar } from "./editor/Toolbar";
+import { useKeyboard } from "./canvas/useKeyboard";
+import { ShortcutEditor } from "./core/ShortcutEditor";
 
 export function App() {
+  const [ready, setReady] = useState(false);
+  useKeyboard();
+
   useEffect(() => {
-    document.title = "KaijTab";
+    void bootstrap().then(() => setReady(true));
   }, []);
 
+  if (!ready) return null;
+
   return (
-    <main class="boot">
-      <h1>KaijTab</h1>
-      <p>自由画布式新标签页 · 脚手架就绪</p>
-    </main>
+    <div class="kt-app" data-editing={editing.value ? "true" : "false"}>
+      <Canvas />
+      <Toolbar />
+      <ShortcutEditor />
+    </div>
   );
 }

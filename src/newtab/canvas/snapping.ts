@@ -138,10 +138,10 @@ export function computeSnap(rect: Rect, opts: SnapOptions): SnapResult {
 
   const guides: GuideLine[] = [];
   if (bestX) {
-    guides.push(makeGuide("x", bestX.line, rect.x + dx, rect.w, bestX.other, viewport));
+    guides.push(makeGuide("x", bestX.line, rect.y + dy, rect.h, bestX.other, viewport));
   }
   if (bestY) {
-    guides.push(makeGuide("y", bestY.line, rect.y + dy, rect.h, bestY.other, viewport));
+    guides.push(makeGuide("y", bestY.line, rect.x + dx, rect.w, bestY.other, viewport));
   }
 
   return { dx, dy, guides };

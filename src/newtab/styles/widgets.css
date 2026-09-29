@@ -1,0 +1,284 @@
+/* ---------- 搜索元件 ---------- */
+
+.kt-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 8px 0 12px;
+  background: var(--kt-surface);
+  border: 1px solid var(--kt-border);
+  border-radius: 999px;
+  backdrop-filter: blur(14px);
+  box-shadow: var(--kt-shadow);
+}
+
+.kt-search-engine-wrap {
+  position: relative;
+}
+
+.kt-search-engine {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--kt-muted);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.kt-search-engine:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--kt-fg);
+}
+
+.kt-search-engine-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10040;
+}
+
+.kt-search-engine-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 10041;
+  min-width: 120px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--kt-surface-strong);
+  border: 1px solid var(--kt-border);
+  border-radius: var(--kt-radius-sm);
+  box-shadow: var(--kt-shadow);
+  backdrop-filter: blur(12px);
+}
+
+.kt-menu-item-active {
+  color: var(--kt-accent);
+}
+
+.kt-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--kt-fg);
+  font-family: inherit;
+  font-size: 15px;
+}
+
+.kt-search-input::placeholder {
+  color: var(--kt-muted);
+}
+
+.kt-search-go {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--kt-muted);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+}
+
+.kt-search-go:hover {
+  background: var(--kt-accent);
+  color: var(--kt-accent-fg);
+}
+
+/* ---------- 快捷方式元件 ---------- */
+
+.kt-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 10px;
+  align-content: start;
+  height: 100%;
+  padding: 4px;
+  overflow: hidden;
+}
+
+.kt-sc-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 4px 8px;
+  border-radius: var(--kt-radius);
+}
+
+.kt-sc-tile:hover {
+  background: var(--kt-surface);
+}
+
+.kt-sc-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: var(--kt-fg);
+  width: 100%;
+}
+
+.kt-sc-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--kt-surface-strong);
+  display: grid;
+  place-content: center;
+  overflow: hidden;
+  border: 1px solid var(--kt-border);
+}
+
+.kt-sc-icon img {
+  width: 28px;
+  height: 28px;
+}
+
+.kt-sc-letter {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--kt-accent);
+}
+
+.kt-sc-title {
+  font-size: 12px;
+  color: var(--kt-fg);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.9;
+}
+
+.kt-sc-actions {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: none;
+  gap: 2px;
+}
+
+.kt-item[data-editing="true"] .kt-sc-actions {
+  display: flex;
+}
+
+.kt-sc-action {
+  appearance: none;
+  border: 0;
+  background: var(--kt-surface-strong);
+  color: var(--kt-muted);
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+}
+
+.kt-sc-action:hover {
+  color: var(--kt-accent-fg);
+  background: var(--kt-accent);
+}
+
+.kt-sc-action-danger:hover {
+  background: var(--kt-danger);
+}
+
+.kt-sc-add {
+  appearance: none;
+  border: 1px dashed var(--kt-border);
+  background: transparent;
+  color: var(--kt-muted);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.kt-sc-add:hover {
+  color: var(--kt-fg);
+  border-color: var(--kt-accent);
+}
+
+.kt-sc-add .kt-sc-icon {
+  background: transparent;
+  border-style: dashed;
+}
+
+/* ---------- 通用弹窗 ---------- */
+
+.kt-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 20000;
+}
+
+.kt-modal {
+  position: fixed;
+  z-index: 20001;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 360px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--kt-surface-strong);
+  border: 1px solid var(--kt-border);
+  border-radius: var(--kt-radius);
+  box-shadow: var(--kt-shadow);
+  backdrop-filter: blur(16px);
+}
+
+.kt-modal h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.kt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--kt-muted);
+}
+
+.kt-field input {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--kt-border);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--kt-fg);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.kt-field input:focus {
+  border-color: var(--kt-accent);
+}
+
+.kt-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

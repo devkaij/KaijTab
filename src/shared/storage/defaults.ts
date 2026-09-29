@@ -9,7 +9,18 @@ export function createDefaultState(): RootState {
     },
     shortcuts: {
       groups: [{ id: "grp_default", name: "默认" }],
-      items: [],
+      items: [
+        { id: "sc_baidu", groupId: "grp_default", title: "百度", url: "https://www.baidu.com" },
+        {
+          id: "sc_bilibili",
+          groupId: "grp_default",
+          title: "哔哩哔哩",
+          url: "https://www.bilibili.com",
+        },
+        { id: "sc_zhihu", groupId: "grp_default", title: "知乎", url: "https://www.zhihu.com" },
+        { id: "sc_weibo", groupId: "grp_default", title: "微博", url: "https://weibo.com" },
+        { id: "sc_github", groupId: "grp_default", title: "GitHub", url: "https://github.com" },
+      ],
     },
     modules: {
       enabled: [],
