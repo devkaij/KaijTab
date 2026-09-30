@@ -27,6 +27,7 @@ export function createDefaultState(): RootState {
       settings: {},
     },
     moduleData: {},
+    localSecrets: {},
     wallpaperLibrary: [],
     wallpaperCurrent: null,
     settings: {
@@ -73,6 +74,7 @@ export function mergeDefaults(stored: Partial<RootState> | null | undefined): Ro
       ...(stored.modules ?? {}),
     },
     moduleData: stored.moduleData ?? defaults.moduleData,
+    localSecrets: stored.localSecrets ?? defaults.localSecrets,
     wallpaperLibrary: stored.wallpaperLibrary ?? defaults.wallpaperLibrary,
     settings: {
       ...defaults.settings,

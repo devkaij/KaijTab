@@ -117,6 +117,8 @@ export interface RootState {
   modules: ModulesState;
   /** 模块私有数据，键为 `模块id:实例id`，默认不同步 */
   moduleData: Record<string, unknown>;
+  /** 模块级敏感数据（如 API Key），键为 `模块id:字段`；永不参与同步 */
+  localSecrets: Record<string, unknown>;
   wallpaperLibrary: WallpaperRecord[];
   /** 当前壁纸 id */
   wallpaperCurrent: string | null;

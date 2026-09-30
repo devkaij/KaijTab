@@ -183,5 +183,63 @@ await page.getByTestId("edit-done").click();
 await page.waitForTimeout(1200);
 await shot("10-view-light.png");
 
+// 11. AI 推荐（接一个假接口演示交互；真实使用需填自己的 Key）
+await context.route("**/api.example.com/**", (route) =>
+  route.fulfill({
+    json: {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              recommendations: [
+                { title: "GitHub · 你的仓库", url: "https://github.com/", reason: "你最近常看代码" },
+                { title: "哔哩哔哩 · 稍后再看", url: "https://www.bilibili.com/", reason: "晚上常刷视频" },
+                { title: "知乎热榜", url: "https://www.zhihu.com/hot", reason: "午休时段常看热榜" },
+                { title: "微博热搜", url: "https://s.weibo.com/top/summary", reason: "关注今日热点" },
+              ],
+            }),
+          },
+        },
+      ],
+    },
+  }),
+);
+await page.evaluate(() => {
+  const store = window.__kaijtab;
+  store.updateSettings({ theme: "dark" });
+});
+await enterEdit();
+await addModule("ai-recommend");
+await page.getByTestId("edit-done").click();
+await page.waitForTimeout(300);
+await page.evaluate(() => {
+  const store = window.__kaijtab;
+  store.commit((s) => ({
+    ...s,
+    modules: {
+      ...s.modules,
+      settings: { ...s.modules.settings, "ai-recommend": { baseUrl: "https://api.example.com/v1", model: "gpt-4o-mini" } },
+    },
+    localSecrets: { ...s.localSecrets, "ai-recommend:apiKey": "sk-demo" },
+  }));
+});
+await page.waitForTimeout(700);
+await page.reload();
+await page.locator(".kt-item").first().waitFor();
+await page.waitForSelector('[data-testid="ai-item"]', { timeout: 20000 });
+await page.evaluate(() => {
+  const store = window.__kaijtab;
+  const boxes = {
+    "ai-recommend": [740, 470, 450, 290],
+    bookmarks: [760, 770, 430, 120],
+  };
+  for (const [type, [x, y, w, h]] of Object.entries(boxes)) {
+    const item = store.state.value.layout.items.find((i) => i.type === type);
+    if (item) store.updateItemRect(item.id, { x, y, w, h });
+  }
+});
+await page.waitForTimeout(1000);
+await shot("11-ai-recommend.png");
+
 await context.close();
 console.log(`截图已生成：${out}`);

@@ -89,9 +89,22 @@ export interface ModuleRuntime {
     /** 模块根元素上应使用的 class，保证模块只消费主题变量 */
     rootClass: string;
   };
+  /** 宿主提供的只读应用数据（模块无需直接访问 chrome.*） */
+  app: {
+    shortcuts(): Array<{ title: string; url: string }>;
+  };
   /** 模块级设置（跨实例共享） */
   settings: {
     get<T extends Record<string, unknown>>(): T;
     set(patch: Record<string, unknown>): void;
+  };
+  /**
+   * 模块级敏感数据（API Key、令牌等）：
+   * 只写本地存储，**永不参与账号同步**。
+   */
+  secrets: {
+    get<T>(key: string): T | null;
+    set(key: string, value: unknown): void;
+    remove(key: string): void;
   };
 }

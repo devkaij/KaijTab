@@ -57,6 +57,17 @@ modules/<id>/
 
 玻璃模式下由宿主在元件表面统一绘制效果，模块卡片自动透明，不需要模块做任何事。
 
+## 敏感数据与宿主数据
+
+- **API Key / 令牌等敏感信息**：用 `runtime.secrets`（模块级、只写本地、**永不参与账号同步**）
+  ```ts
+  runtime.secrets.set("apiKey", value);
+  const key = runtime.secrets.get<string>("apiKey");
+  ```
+- **非敏感配置**（接口地址、模型名等）：用 `runtime.settings`（随设置一起跨设备同步）
+- **只读的应用数据**：`runtime.app.shortcuts()` 可拿到用户的快捷方式列表（标题 + URL），不需要自己访问 `chrome.*`
+- 若模块必须使用浏览器 API（例如书签、历史记录），请在模块 README 里写明原因与所需权限
+
 ## 创建新模块
 
 ```bash

@@ -56,6 +56,11 @@ export function createRuntime(moduleId: string, instanceId: string): ModuleRunti
       rootClass: "kt-module",
     },
 
+    app: {
+      shortcuts: () =>
+        state.value.shortcuts.items.map((item) => ({ title: item.title, url: item.url })),
+    },
+
     settings: {
       get: <T extends Record<string, unknown>>() =>
         (state.value.modules.settings[moduleId] as T | undefined) ?? ({} as T),
@@ -70,6 +75,30 @@ export function createRuntime(moduleId: string, instanceId: string): ModuleRunti
             },
           },
         }));
+      },
+    },
+
+    secrets: {
+      get: <T>(key: string) =>
+        (state.value.localSecrets[`${moduleId}:${key}`] as T | undefined) ?? null,
+      set(key: string, value: unknown): void {
+        commit(
+          (s) => ({
+            ...s,
+            localSecrets: { ...s.localSecrets, [`${moduleId}:${key}`]: value },
+          }),
+          { skipHistory: true, skipSync: true, flush: true },
+        );
+      },
+      remove(key: string): void {
+        commit(
+          (s) => {
+            const next = { ...s.localSecrets };
+            delete next[`${moduleId}:${key}`];
+            return { ...s, localSecrets: next };
+          },
+          { skipHistory: true, skipSync: true, flush: true },
+        );
       },
     },
   };
