@@ -206,14 +206,16 @@ export async function externalizeInlineScripts(
 
 /* ---------- 虚拟文件服务 ---------- */
 
+import { appUrl } from "@/shared/utils/app-url";
+
 let registration: Promise<boolean> | null = null;
 
 export function registerWhost(): Promise<boolean> {
   if (!("serviceWorker" in navigator)) return Promise.resolve(false);
   if (!registration) {
     registration = navigator.serviceWorker
-      .register(chrome.runtime.getURL("whost-sw.js"), {
-        scope: chrome.runtime.getURL("whost/"),
+      .register(appUrl("whost-sw.js"), {
+        scope: appUrl("whost/"),
         type: "module",
       })
       .then(async () => {
@@ -226,5 +228,5 @@ export function registerWhost(): Promise<boolean> {
 }
 
 export function webWallpaperUrl(id: string, entry = "index.html"): string {
-  return `${chrome.runtime.getURL("whost/")}${id}/${entry}`;
+  return `${appUrl("whost/")}${id}/${entry}`;
 }

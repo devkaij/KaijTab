@@ -241,5 +241,30 @@ await page.evaluate(() => {
 await page.waitForTimeout(1000);
 await shot("11-ai-recommend.png");
 
+// 12. 手机竖屏（触摸适配）：独立 profile，看到的是手机友好的首次布局
+const phone = await chromium.launchPersistentContext("", {
+  headless: false,
+  viewport: { width: 390, height: 844 },
+  deviceScaleFactor: 3,
+  isMobile: true,
+  hasTouch: true,
+  args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`, "--no-first-run"],
+});
+let [phoneWorker] = phone.serviceWorkers();
+if (!phoneWorker) phoneWorker = await phone.waitForEvent("serviceworker");
+const phoneExtensionId = new URL(phoneWorker.url()).host;
+const phonePage = await phone.newPage();
+await phonePage.goto(`chrome-extension://${phoneExtensionId}/main.html`);
+await phonePage.locator(".kt-item").first().waitFor();
+await phonePage.waitForTimeout(2000);
+await phonePage.screenshot({ path: resolve(out, "12-mobile.png") });
+
+// 13. 手机竖屏：全屏抽屉面板
+await phonePage.getByTestId("edit-entry").tap();
+await phonePage.getByTestId("open-module-center").tap();
+await phonePage.waitForTimeout(500);
+await phonePage.screenshot({ path: resolve(out, "13-mobile-panel.png") });
+await phone.close();
+
 await context.close();
 console.log(`截图已生成：${out}`);

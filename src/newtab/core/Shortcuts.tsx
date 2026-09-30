@@ -103,7 +103,11 @@ export function Shortcuts({ instanceId }: { instanceId: string; props: Record<st
     if (!ensureFreeMode(container)) return;
 
     const startPointer = { x: e.clientX, y: e.clientY };
-    tile.setPointerCapture(e.pointerId);
+    try {
+      tile.setPointerCapture(e.pointerId);
+    } catch {
+      // 合成事件或指针已释放：忽略（后续事件仍会派发到该元素）
+    }
     tile.style.willChange = "left, top";
 
     let latest: { x: number; y: number } = item.pos ?? {
