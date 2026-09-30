@@ -13,7 +13,7 @@ import type { GuideLine } from "./canvas/snapping";
 import { removeWallpaperFiles } from "./core/wallpaper/opfs";
 import { removeWebProject } from "./core/wallpaper/web";
 import { nextFreePos } from "./core/shortcut-layout";
-import { defaultSyncStore, isExtensionContext } from "@/shared/storage/kv";
+import { chromeSync } from "@/shared/storage/kv";
 import {
   applySyncSnapshot,
   packForSync,
@@ -37,8 +37,6 @@ export const booted = signal(false);
 export const canUndo = signal(false);
 export const canRedo = signal(false);
 export const contextMenu = signal<{ itemId: string; x: number; y: number } | null>(null);
-/** 运行模式：扩展 / 纯网页（PWA） */
-export const extensionMode = isExtensionContext();
 
 export const selectedItem = computed(() =>
   state.value.layout.items.find((i) => i.id === selectedId.value) ?? null,
@@ -416,25 +414,22 @@ export function nudgeSelected(dx: number, dy: number): void {
   updateItemRect(item.id, { ...rect, x: rect.x + dx, y: rect.y + dy }, { key: "nudge" });
 }
 
-/** 首次运行播种：搜索框 + 快捷方式居中排布（按当前视口自适应，手机上也能直接看） */
+/** 首次运行播种：搜索框 + 快捷方式居中排布 */
 export function seedDefaultLayout(): void {
   const s = state.value;
   if (s.layout.items.length > 0 || s.layout.base.w > 0) return;
-
-  const vp = viewport.value;
-  const wide = vp.w >= 720;
-  const searchW = Math.min(560, Math.round(vp.w * (wide ? 0.4 : 0.9)));
-  const searchH = wide ? 56 : 48;
-  const shortcutsW = Math.min(760, Math.round(vp.w * (wide ? 0.55 : 0.94)));
-  const shortcutsH = wide ? 180 : 150;
-  const top = wide ? 140 : 84;
-
+  const vw = 1440;
+  const vh = 900;
+  const searchW = 560;
+  const searchH = 56;
+  const scW = 760;
+  const scH = 180;
   const items: WidgetInstance[] = [
     {
       id: newId("inst"),
       type: "core:search",
-      x: (vp.w - searchW) / 2 / vp.w,
-      y: top / vp.h,
+      x: (vw - searchW) / 2 / vw,
+      y: 140 / vh,
       w: searchW,
       h: searchH,
       z: 1,
@@ -443,16 +438,15 @@ export function seedDefaultLayout(): void {
     {
       id: newId("inst"),
       type: "core:shortcuts",
-      x: (vp.w - shortcutsW) / 2 / vp.w,
-      y: (top + searchH + (wide ? 64 : 36)) / vp.h,
-      w: shortcutsW,
-      h: shortcutsH,
+      x: (vw - scW) / 2 / vw,
+      y: 260 / vh,
+      w: scW,
+      h: scH,
       z: 2,
       props: {},
     },
   ];
-
-  commit((d) => withItems({ ...d, layout: { base: { w: vp.w, h: vp.h }, items } }, items), {
+  commit((d) => withItems({ ...d, layout: { base: { w: vw, h: vh }, items } }, items), {
     skipHistory: true,
   });
 }
@@ -474,7 +468,7 @@ export function scheduleSyncPush(): void {
 }
 
 export async function pushToSync(): Promise<void> {
-  const store = defaultSyncStore();
+  const store = chromeSync();
   try {
     const packed = packForSync(toSyncSnapshot(state.value));
     const existing = await store.get(null);
@@ -504,16 +498,12 @@ export async function pushToSync(): Promise<void> {
 }
 
 export async function setSyncEnabled(enabled: boolean): Promise<void> {
-  if (!isExtensionContext()) {
-    toast("网页模式下没有账号同步通道（用扩展版可用）");
-    return;
-  }
   syncEnabled.value = enabled;
   commit((s) => ({ ...s, settings: { ...s.settings, syncEnabled: enabled } }), {
     skipHistory: true,
   });
 
-  const store = defaultSyncStore();
+  const store = chromeSync();
   if (enabled) {
     await pushToSync();
     if (syncEnabled.value) {
@@ -540,18 +530,16 @@ export async function bootstrap(): Promise<void> {
   }
 
   // 浏览器账号同步：存在云端快照则以云端为准（壁纸与私有数据仍用本地）
-  if (isExtensionContext()) {
-    try {
-      const snapshot = unpackSync(await defaultSyncStore().get(null));
-      if (snapshot) {
-        state.value = applySyncSnapshot(state.value, snapshot);
-        await saver.flush();
-      }
-    } catch {
-      // 同步不可用不影响本地使用
+  try {
+    const snapshot = unpackSync(await chromeSync().get(null));
+    if (snapshot) {
+      state.value = applySyncSnapshot(state.value, snapshot);
+      await saver.flush();
     }
+  } catch {
+    // 同步不可用不影响本地使用
   }
-  syncEnabled.value = isExtensionContext() && state.value.settings.syncEnabled === true;
+  syncEnabled.value = state.value.settings.syncEnabled === true;
 
   seedDefaultLayout();
   booted.value = true;

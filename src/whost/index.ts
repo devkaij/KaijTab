@@ -111,5 +111,3 @@ function notFound(): Response {
     headers: { "content-type": "text/plain; charset=utf-8" },
   });
 }
-
-export {};

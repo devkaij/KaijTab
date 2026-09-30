@@ -85,10 +85,6 @@ export function Search({ instanceId }: { instanceId: string; props: Record<strin
         placeholder="搜索或输入网址"
         value={value}
         spellcheck={false}
-        autocapitalize="off"
-        autocomplete="off"
-        enterkeyhint="search"
-        data-testid="search-input"
         onInput={(e) => setValue((e.target as HTMLInputElement).value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
@@ -97,6 +93,7 @@ export function Search({ instanceId }: { instanceId: string; props: Record<strin
           }
           e.stopPropagation();
         }}
+        data-testid="search-input"
       />
 
       <button class="kt-search-go kt-interactive" onClick={submit} title="搜索" data-testid="search-go">

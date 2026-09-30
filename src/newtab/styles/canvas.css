@@ -98,18 +98,10 @@
   cursor: grab;
   border-radius: var(--kt-radius);
   z-index: 1;
-  /* 触屏拖拽元件时不要触发页面滚动 */
-  touch-action: none;
 }
 
 .kt-drag-layer:active {
   cursor: grabbing;
-}
-
-/* 编辑态下禁止选中文本（触屏长按会弹系统菜单） */
-.kt-item[data-editing="true"] {
-  user-select: none;
-  -webkit-user-select: none;
 }
 
 /* ---------- 缩放手柄 ---------- */
@@ -206,11 +198,11 @@
 
 .kt-edit-entry {
   position: absolute;
-  top: max(16px, calc(env(safe-area-inset-top) + 8px));
-  right: max(16px, calc(env(safe-area-inset-right) + 8px));
+  top: 16px;
+  right: 16px;
   z-index: 9000;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-content: center;
   border-radius: 10px;
@@ -233,7 +225,7 @@
 
 .kt-toolbar {
   position: absolute;
-  top: max(16px, calc(env(safe-area-inset-top) + 8px));
+  top: 16px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 9000;

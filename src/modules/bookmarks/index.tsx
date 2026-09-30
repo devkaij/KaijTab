@@ -1,7 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import type { ModuleProps } from "@/newtab/module-host/types";
 import { IconProbe } from "@/shared/ui/IconProbe";
-import { isExtensionContext } from "@/shared/storage/kv";
 import "./bookmarks.css";
 
 const ROOT_IDS: Record<string, string> = {
@@ -27,13 +26,9 @@ export default function Bookmarks({ props }: ModuleProps) {
   }, [source]);
 
   useEffect(() => {
-    const api = (globalThis as { chrome?: typeof chrome }).chrome?.bookmarks;
+    const api = chrome.bookmarks;
     if (!api) {
-      setError(
-        isExtensionContext()
-          ? "缺少 bookmarks 权限，请在扩展管理页重新加载本扩展"
-          : "纯网页模式没有书签接口（扩展版可用）",
-      );
+      setError("缺少 bookmarks 权限，请在扩展管理页重新加载本扩展");
       return;
     }
     let cancelled = false;
@@ -59,7 +54,7 @@ export default function Bookmarks({ props }: ModuleProps) {
 
   // 书签被增删改时实时刷新
   useEffect(() => {
-    const api = (globalThis as { chrome?: typeof chrome }).chrome?.bookmarks;
+    const api = chrome.bookmarks;
     if (!api) return;
     const reload = () => setRevision((value) => value + 1);
     const events = [api.onCreated, api.onRemoved, api.onChanged, api.onMoved];
