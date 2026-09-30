@@ -1,5 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import { bootstrap, editing } from "./store";
+import { useTheme } from "./theme";
 import { Canvas } from "./canvas/Canvas";
 import { Toolbar } from "./editor/Toolbar";
 import { useKeyboard } from "./canvas/useKeyboard";
@@ -14,6 +15,7 @@ import { Toasts } from "./ui/toast";
 export function App() {
   const [ready, setReady] = useState(false);
   useKeyboard();
+  useTheme();
 
   useEffect(() => {
     void bootstrap().then(() => {

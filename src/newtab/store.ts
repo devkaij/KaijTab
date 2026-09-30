@@ -11,6 +11,7 @@ import { createHistory } from "./canvas/history";
 import { instanceRect, toNormalized, type Rect, type Size } from "./canvas/geometry";
 import type { GuideLine } from "./canvas/snapping";
 import { removeWallpaperFiles } from "./core/wallpaper/opfs";
+import { removeWebProject } from "./core/wallpaper/web";
 import { nextFreePos } from "./core/shortcut-layout";
 import { chromeSync } from "@/shared/storage/kv";
 import {
@@ -341,7 +342,12 @@ export function setCurrentWallpaper(id: string | null): void {
 export async function dropWallpaper(id: string): Promise<void> {
   const record = state.value.wallpaperLibrary.find((w) => w.id === id);
   if (!record) return;
-  await removeWallpaperFiles(record);
+  if (record.kind === "web") {
+    await removeWebProject(record.id);
+    await removeWallpaperFiles(record);
+  } else {
+    await removeWallpaperFiles(record);
+  }
   commit((s) => ({
     ...s,
     wallpaperLibrary: s.wallpaperLibrary.filter((w) => w.id !== id),

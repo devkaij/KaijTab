@@ -5,11 +5,11 @@
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  background: #090c10;
+  background: var(--kt-bg);
 }
 
 .kt-wallpaper-default {
-  background: radial-gradient(120% 120% at 20% 0%, #16233a 0%, #0d1117 55%, #090c10 100%);
+  background: var(--kt-backdrop);
 }
 
 .kt-wallpaper-media {
@@ -38,7 +38,7 @@
   position: fixed;
   inset: 0;
   z-index: 15000;
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--kt-scrim-soft);
 }
 
 .kt-panel {
@@ -83,7 +83,7 @@
 }
 
 .kt-panel-close:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--kt-hover);
   color: var(--kt-fg);
 }
 
@@ -139,7 +139,7 @@
 .kt-progress-track {
   height: 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--kt-hover);
   overflow: hidden;
 }
 
@@ -191,7 +191,7 @@
   padding: 6px;
   border-radius: var(--kt-radius-sm);
   border: 1px solid var(--kt-border);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--kt-tile-bg);
   text-align: left;
 }
 
@@ -213,13 +213,13 @@
   aspect-ratio: 16 / 9;
   object-fit: cover;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--kt-scrim-soft);
   display: block;
 }
 
 .kt-wp-thumb-empty,
 .kt-wp-thumb-default {
-  background: radial-gradient(120% 120% at 20% 0%, #1c2c47 0%, #0d1117 60%);
+  background: var(--kt-backdrop);
 }
 
 .kt-wp-name {
@@ -253,7 +253,7 @@
 }
 
 .kt-wp-action:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--kt-hover);
 }
 
 .kt-wp-action-danger:hover {
@@ -277,7 +277,7 @@
   gap: 2px;
   padding: 3px;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.28);
+  background: var(--kt-input-bg);
   border: 1px solid var(--kt-border);
 }
 

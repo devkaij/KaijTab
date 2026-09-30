@@ -14,6 +14,8 @@ import {
   readBlob,
   removeFile,
   splitPath,
+  THUMB_DIR,
+  writeBlob,
   type StorageUsage,
 } from "./opfs";
 import {
@@ -21,8 +23,21 @@ import {
   formatDuration,
   importWallpaperFile,
   isSupported,
+  makePlaceholderThumb,
+  makeThumbnail,
   scanWallpaperEngineFolder,
 } from "./importer";
+import {
+  collectDirectoryEntries,
+  entriesFromFileList,
+  externalizeInlineScripts,
+  findPreview,
+  validateWebProject,
+  WEB_ROOT,
+  writeWebProject,
+  type WebEntry,
+} from "./web";
+import { newId } from "@/shared/utils/ids";
 import { useObjectUrl } from "./useObjectUrl";
 
 interface ImportTask {
@@ -62,6 +77,7 @@ export function WallpaperPanel() {
   const [errors, setErrors] = useState<string[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const webInputRef = useRef<HTMLInputElement>(null);
 
   const refreshUsage = useCallback(() => {
     void estimateUsage()
@@ -70,7 +86,11 @@ export function WallpaperPanel() {
   }, []);
 
   useEffect(() => {
-    if (open) refreshUsage();
+    if (!open) return;
+    refreshUsage();
+    // 通过属性打开目录选择（JSX 里写非标准属性会被类型系统拦下）
+    const input = webInputRef.current as (HTMLInputElement & { webkitdirectory: boolean }) | null;
+    if (input) input.webkitdirectory = true;
   }, [open, refreshUsage]);
 
   if (!open) return null;
@@ -105,6 +125,67 @@ export function WallpaperPanel() {
     refreshUsage();
   };
 
+  /** 网页壁纸（WE 的 web / application 工程）导入 */
+  const importWeb = async (
+    entries: WebEntry[],
+    displayName: string,
+    source: "we" | "file",
+    onProgressStep?: (written: number, total: number) => void,
+  ): Promise<void> => {
+    try {
+      const validated = validateWebProject(entries);
+      if ("error" in validated) throw new Error(validated.error);
+
+      // 内联脚本外置：绕开扩展 CSP 对 inline script 的限制
+      const prepared = await externalizeInlineScripts(entries, validated.entry);
+      if (prepared.extracted > 0) {
+        setNotice(`已把 ${prepared.extracted} 段内联脚本外置为文件（扩展 CSP 不允许内联脚本）`);
+      }
+
+      const id = newId("wp");
+      setTask({ fileName: displayName, written: 0, total: 1, phase: "copying" });
+      const { fileCount, bytes } = await writeWebProject(id, prepared.entries, (written, total) => {
+        setTask({ fileName: displayName, written, total, phase: "copying" });
+        onProgressStep?.(written, total);
+      });
+
+      setTask({ fileName: displayName, written: bytes, total: bytes, phase: "thumbnail" });
+      const preview = findPreview(prepared.entries);
+      const thumb = preview
+        ? await makeThumbnail(preview.file, "image")
+        : await makePlaceholderThumb(displayName);
+      await writeBlob(THUMB_DIR, `${id}.jpg`, thumb);
+
+      addWallpaperRecord({
+        id,
+        kind: "web",
+        name: displayName,
+        file: `${WEB_ROOT}/${id}`,
+        thumb: `${THUMB_DIR}/${id}.jpg`,
+        size: bytes,
+        entry: validated.entry,
+        fileCount,
+        addedAt: Date.now(),
+        source,
+      });
+    } catch (error) {
+      setErrors((prev) => [
+        ...prev,
+        `${displayName}：${String((error as Error).message ?? error)}`,
+      ]);
+    }
+  };
+
+  const handleWebFiles = async (files: File[]): Promise<void> => {
+    const entries = entriesFromFileList(files);
+    const topName =
+      (files[0] as File & { webkitRelativePath?: string })?.webkitRelativePath?.split("/")[0] ??
+      "网页壁纸";
+    await importWeb(entries, topName, "file");
+    setTask(null);
+    refreshUsage();
+  };
+
   const pickFolder = async (): Promise<void> => {
     const picker = (
       window as unknown as {
@@ -119,13 +200,18 @@ export function WallpaperPanel() {
       const dir = await picker.call(window, { id: "kaijtab-we-workshop", mode: "read" });
       const scanned = await scanWallpaperEngineFolder(dir);
       if (scanned.length === 0) {
-        setErrors((prev) => [...prev, "该目录下没有找到 .mp4 / .webm 视频壁纸"]);
+        setErrors((prev) => [...prev, "该目录下没有找到可识别的壁纸（视频 / 图片 / 网页工程）"]);
         return;
       }
       setQueue(scanned.length);
       for (const item of scanned) {
         setQueue((q) => Math.max(0, q - 1));
-        await importOne(item.file, "we", item.displayName);
+        if (item.kind === "web" && item.dir) {
+          const entries = await collectDirectoryEntries(item.dir);
+          await importWeb(entries, item.displayName, "we");
+        } else if (item.file) {
+          await importOne(item.file, "we", item.displayName);
+        }
       }
       setTask(null);
       refreshUsage();
@@ -176,10 +262,33 @@ export function WallpaperPanel() {
             <button class="kt-btn" onClick={() => void pickFolder()} data-testid="import-folder">
               从壁纸引擎导入
             </button>
+            <button
+              class="kt-btn"
+              onClick={() => webInputRef.current?.click()}
+              data-testid="import-web"
+              title="选择含 index.html 的网页壁纸工程文件夹"
+            >
+              导入网页壁纸
+            </button>
           </div>
           <p class="kt-panel-hint">
-            支持 mp4 / webm 动态壁纸与常见图片。从壁纸引擎（Steam 创意工坊 431960 目录）导入时可批量识别视频壁纸。
+            支持 mp4 / webm / mov / mkv / gif / svg 等视频与图片（能不能解码交给浏览器判断）；
+            网页壁纸请选择工程文件夹（含 index.html）。从壁纸引擎（Steam 创意工坊 431960
+            目录）导入时可批量识别，社区工程里依赖 WE 专有接口的部分可能显示不完整。
           </p>
+          <input
+            ref={webInputRef}
+            type="file"
+            multiple
+            style={{ display: "none" }}
+            data-testid="web-file-input"
+            onChange={(e) => {
+              const files = Array.from((e.target as HTMLInputElement).files ?? []);
+              (e.target as HTMLInputElement).value = "";
+              if (files.length === 0) return;
+              void handleWebFiles(files);
+            }}
+          />
           <input
             ref={fileInputRef}
             type="file"

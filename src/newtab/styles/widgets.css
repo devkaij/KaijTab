@@ -36,7 +36,7 @@
 }
 
 .kt-search-engine:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--kt-hover);
   color: var(--kt-fg);
 }
 
@@ -134,7 +134,7 @@
 .kt-shortcuts[data-arranging="true"] .kt-sc-tile {
   cursor: grab;
   touch-action: none;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--kt-tile-bg);
 }
 
 .kt-shortcuts[data-arranging="true"] .kt-sc-tile:active {
@@ -187,7 +187,7 @@
 }
 
 .kt-sc-arrange-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--kt-hover-strong);
 }
 
 .kt-sc-arrange-primary {
@@ -230,12 +230,12 @@
   height: clamp(32px, 5.8cqw, 88px);
   border-radius: clamp(8px, 1.6cqw, 22px);
   /* 浅色底：绝大多数站点 favicon 是白底小图，浅底才不会变成白色方块 */
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: var(--kt-icon-tile-bg);
+  border: 1px solid var(--kt-icon-tile-border);
   display: grid;
   place-content: center;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 8px var(--kt-scrim-soft);
 }
 
 .kt-sc-icon img {
@@ -322,7 +322,7 @@
 .kt-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--kt-scrim);
   z-index: 20000;
 }
 
@@ -362,7 +362,7 @@
   padding: 0 10px;
   border-radius: 8px;
   border: 1px solid var(--kt-border);
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--kt-input-bg);
   color: var(--kt-fg);
   font-family: inherit;
   font-size: 13px;
@@ -392,7 +392,7 @@
   place-content: center;
   border-radius: 9px;
   border: 1px solid var(--kt-border);
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--kt-input-bg);
   color: var(--kt-accent);
   font-size: 14px;
   font-weight: 600;

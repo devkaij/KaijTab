@@ -25,7 +25,7 @@
   content: "";
   position: absolute;
   inset: -1px;
-  border: 1px dashed rgba(255, 255, 255, 0.28);
+  border: 1px dashed var(--kt-edit-outline);
   border-radius: calc(var(--kt-radius) + 2px);
   pointer-events: none;
 }
@@ -36,7 +36,7 @@
 
 .kt-item[data-locked="true"]::after {
   border-style: solid;
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: var(--kt-edit-outline-strong);
 }
 
 .kt-widget {
@@ -181,7 +181,7 @@
 }
 
 .kt-menu-item:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--kt-hover);
 }
 
 .kt-menu-danger {
@@ -253,7 +253,7 @@
 }
 
 .kt-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--kt-hover);
 }
 
 .kt-btn:disabled {

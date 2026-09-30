@@ -92,8 +92,8 @@
 
 .kt-weather-retry {
   appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--kt-border-strong);
+  background: var(--kt-input-bg);
   color: var(--kt-fg);
   font-family: inherit;
   font-size: inherit;
@@ -103,5 +103,5 @@
 }
 
 .kt-weather-retry:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--kt-hover-strong);
 }

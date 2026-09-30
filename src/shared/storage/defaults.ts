@@ -36,6 +36,7 @@ export function createDefaultState(): RootState {
       dimWallpaperInEditor: true,
       syncEnabled: false,
       glassEffect: "frost",
+      theme: "system",
       editorPrefs: {
         grid: null,
         snapThreshold: 6,

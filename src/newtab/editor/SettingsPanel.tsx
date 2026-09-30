@@ -1,5 +1,5 @@
 import { settingsPanelOpen, setSyncEnabled, state, syncEnabled, updateSettings } from "@/newtab/store";
-import type { GlassEffect } from "@/shared/types";
+import type { GlassEffect, ThemeMode } from "@/shared/types";
 
 const GLASS_OPTIONS: Array<{ value: GlassEffect; label: string; hint: string }> = [
   { value: "none", label: "无", hint: "元件使用自身卡片样式" },
@@ -7,11 +7,18 @@ const GLASS_OPTIONS: Array<{ value: GlassEffect; label: string; hint: string }> 
   { value: "liquid", label: "液态玻璃", hint: "强折射 + 顶部高光" },
 ];
 
+const THEME_OPTIONS: Array<{ value: ThemeMode; label: string; hint: string }> = [
+  { value: "system", label: "跟随系统", hint: "随系统深浅色自动切换" },
+  { value: "light", label: "浅色", hint: "始终浅色" },
+  { value: "dark", label: "深色", hint: "始终深色" },
+];
+
 export function SettingsPanel() {
   if (!settingsPanelOpen.value) return null;
 
   const settings = state.value.settings;
   const glass = settings.glassEffect;
+  const theme = settings.theme ?? "system";
 
   const close = () => (settingsPanelOpen.value = false);
 
@@ -25,6 +32,26 @@ export function SettingsPanel() {
             ✕
           </button>
         </header>
+
+        <section class="kt-panel-section">
+          <h4>外观 · 主题</h4>
+          <div class="kt-segmented" data-testid="theme-selector">
+            {THEME_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                class={`kt-segmented-item ${theme === option.value ? "kt-segmented-active" : ""}`}
+                title={option.hint}
+                onClick={() => updateSettings({ theme: option.value })}
+                data-testid={`theme-${option.value}`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <p class="kt-panel-hint">
+            浅色/深色会影响界面、玻璃质感与默认背景；选择"跟随系统"时随系统设置自动切换。
+          </p>
+        </section>
 
         <section class="kt-panel-section">
           <h4>外观 · 玻璃效果</h4>

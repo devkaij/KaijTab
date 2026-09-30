@@ -169,5 +169,19 @@ await page.evaluate(() => {
 await page.waitForTimeout(600);
 await shot("09-clock-scaled.png");
 
+// 10. 浅色模式（跟随系统 / 手动切换）
+await page.getByTestId("open-settings").click();
+await page.getByTestId("theme-light").click();
+await page.getByTestId("settings-panel").locator(".kt-panel-close").click();
+await page.evaluate(() => {
+  const store = window.__kaijtab;
+  const item = store.state.value.layout.items.find((i) => i.type === "clock");
+  if (item) store.updateItemRect(item.id, { x: 1200, y: 300, w: 340, h: 180 });
+  store.setCurrentWallpaper(null); // 切回默认背景，展示浅色主题本身
+});
+await page.getByTestId("edit-done").click();
+await page.waitForTimeout(1200);
+await shot("10-view-light.png");
+
 await context.close();
 console.log(`截图已生成：${out}`);

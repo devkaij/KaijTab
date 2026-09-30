@@ -6,6 +6,10 @@ import { THUMB_DIR, WALLPAPER_DIR, estimateUsage, removeFile, writeBlob } from "
 export const WARN_SIZE = 300 * 1024 * 1024;
 export const REFUSE_SIZE = 500 * 1024 * 1024;
 
+/** 视频/图片扩展名（放宽清单：能不能播交给浏览器探测，不再只认白名单） */
+const VIDEO_EXT = /\.(mp4|m4v|webm|mov|mkv|avi|ogv|ogg|mpg|mpeg|m2ts|ts|flv|wmv|3gp)$/i;
+const IMAGE_EXT = /\.(png|jpe?g|jfif|webp|gif|avif|svg|bmp|ico|heic|heif)$/i;
+
 export interface ImportProgress {
   fileName: string;
   written: number;
@@ -28,11 +32,16 @@ export interface ImportOptions {
 export function kindOf(file: { name: string; type: string }): WallpaperKind {
   if (file.type.startsWith("image/")) return "image";
   if (file.type.startsWith("video/")) return "video";
-  return /\.(png|jpe?g|webp|gif|avif)$/i.test(file.name) ? "image" : "video";
+  return IMAGE_EXT.test(file.name) ? "image" : "video";
 }
 
 export function isSupported(file: { name: string; type: string }): boolean {
-  return /\.(mp4|webm|mov|m4v|png|jpe?g|webp|gif|avif)$/i.test(file.name) || file.type.startsWith("video/") || file.type.startsWith("image/");
+  return (
+    VIDEO_EXT.test(file.name) ||
+    IMAGE_EXT.test(file.name) ||
+    file.type.startsWith("video/") ||
+    file.type.startsWith("image/")
+  );
 }
 
 /** 用 video 元素探测可播性与元数据；不可播则抛错。 */
@@ -85,7 +94,8 @@ export async function makeThumbnail(blob: Blob, kind: WallpaperKind, atSecond = 
         img.onerror = () => reject(new Error("图片无法解码"));
         img.src = url;
       });
-      return drawToJpeg(img, img.naturalWidth, img.naturalHeight);
+      // SVG 等矢量图可能没有固有尺寸，回退到 16:9 默认值
+      return drawToJpeg(img, img.naturalWidth || 480, img.naturalHeight || 270);
     }
 
     const video = document.createElement("video");
@@ -207,43 +217,113 @@ export async function importWallpaperFile(
 }
 
 export interface FolderScanResult {
-  file: File;
   displayName: string;
+  kind: "video" | "image" | "web";
+  /** 视频/图片壁纸的文件 */
+  file?: File;
+  /** 网页壁纸的工程目录 */
+  dir?: FileSystemDirectoryHandle;
 }
 
-/** 扫描 Wallpaper Engine 工坊目录：每个子目录取第一个视频/图片，读 project.json 取名。 */
+async function readProjectJson(
+  dir: FileSystemDirectoryHandle,
+): Promise<{ title?: string; type?: string } | null> {
+  try {
+    const handle = await dir.getFileHandle("project.json");
+    const text = await (await handle.getFile()).text();
+    return JSON.parse(text) as { title?: string; type?: string };
+  } catch {
+    return null;
+  }
+}
+
+async function hasIndexHtml(dir: FileSystemDirectoryHandle): Promise<boolean> {
+  try {
+    await dir.getFileHandle("index.html");
+    return true;
+  } catch {
+    try {
+      await dir.getFileHandle("index.htm");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+/** 判断一个目录是不是单个壁纸（视频/图片/网页工程） */
+async function inspectWallpaperDir(
+  dir: FileSystemDirectoryHandle,
+  fallbackName: string,
+): Promise<FolderScanResult | null> {
+  const project = await readProjectJson(dir);
+  const title = project?.title?.trim() || fallbackName;
+  const type = project?.type?.toLowerCase() ?? "";
+
+  const isWeb = type === "web" || type === "application" || (await hasIndexHtml(dir));
+  if (isWeb && (await hasIndexHtml(dir))) {
+    return { displayName: title, kind: "web", dir };
+  }
+
+  const iterator = dir as unknown as AsyncIterable<[string, FileSystemHandle]>;
+  for await (const [fileName, handle] of iterator) {
+    if (handle.kind !== "file") continue;
+    if (!VIDEO_EXT.test(fileName) && !IMAGE_EXT.test(fileName)) continue;
+    const file = await (handle as FileSystemFileHandle).getFile();
+    return { displayName: title, kind: kindOf(file), file };
+  }
+
+  return isWeb ? { displayName: title, kind: "web", dir } : null;
+}
+
+/**
+ * 扫描 Wallpaper Engine 目录（支持两种选法）：
+ * - 直接选中单个壁纸目录（含 project.json / index.html / 视频文件）
+ * - 选中工坊根目录（431960），逐个识别其中的壁纸
+ */
 export async function scanWallpaperEngineFolder(
   root: FileSystemDirectoryHandle,
   limit = 200,
 ): Promise<FolderScanResult[]> {
+  const single = await inspectWallpaperDir(root, root.name);
+  if (single) return [single];
+
   const results: FolderScanResult[] = [];
-  const dir = root as unknown as AsyncIterable<[string, FileSystemHandle]>;
-
-  for await (const [name, handle] of dir) {
+  const iterator = root as unknown as AsyncIterable<[string, FileSystemHandle]>;
+  for await (const [name, handle] of iterator) {
     if (handle.kind !== "directory") continue;
-    const sub = handle as FileSystemDirectoryHandle;
-    let title = name;
-    try {
-      const projectHandle = await sub.getFileHandle("project.json");
-      const projectFile = await projectHandle.getFile();
-      const project = JSON.parse(await projectFile.text()) as { title?: string; type?: string };
-      if (project.title) title = project.title;
-    } catch {
-      // 没有 project.json 就用目录名
-    }
-
-    const subEntries = sub as unknown as AsyncIterable<[string, FileSystemHandle]>;
-    for await (const [fileName, fileHandle] of subEntries) {
-      if (fileHandle.kind !== "file") continue;
-      if (!/\.(mp4|webm)$/i.test(fileName)) continue;
-      const file = await (fileHandle as FileSystemFileHandle).getFile();
-      results.push({ file, displayName: title });
-      break;
-    }
+    const leaf = await inspectWallpaperDir(handle as FileSystemDirectoryHandle, name);
+    if (leaf) results.push(leaf);
     if (results.length >= limit) break;
   }
-
   return results;
+}
+
+/** 网页壁纸没有自带预览图时的占位缩略图 */
+export function makePlaceholderThumb(label: string): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  canvas.width = 480;
+  canvas.height = 270;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas 上下文不可用");
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, "#1c2c47");
+  gradient.addColorStop(1, "#0d1117");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.font = "600 22px 'Segoe UI', 'Microsoft YaHei UI', sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const text = label.length > 16 ? `${label.slice(0, 15)}…` : label;
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("占位缩略图生成失败"))),
+      "image/jpeg",
+      0.8,
+    );
+  });
 }
 
 export function formatBytes(bytes: number): string {

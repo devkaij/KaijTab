@@ -18,7 +18,7 @@
   align-items: center;
   gap: clamp(4px, 1.4cqw, 10px);
   padding: clamp(5px, 1.6cqh, 12px) clamp(8px, 2.4cqw, 18px) clamp(3px, 1cqh, 8px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--kt-divider);
   user-select: none;
 }
 
@@ -31,7 +31,7 @@
   place-content: center;
   border: 0;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--kt-hover);
   color: var(--kt-fg);
   font-size: clamp(12px, 2.4cqw, 18px);
   line-height: 1;
@@ -39,7 +39,7 @@
 }
 
 .kt-bm-back:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--kt-hover-strong);
 }
 
 .kt-bm-crumb {
@@ -67,7 +67,7 @@
   flex-direction: column;
   gap: 1px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+  scrollbar-color: var(--kt-scrollbar) transparent;
 }
 
 .kt-bm-row {
@@ -88,7 +88,7 @@
 }
 
 .kt-bm-row:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--kt-hover);
 }
 
 .kt-bm-icon {

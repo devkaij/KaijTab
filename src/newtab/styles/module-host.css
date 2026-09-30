@@ -12,9 +12,9 @@
   border: 1px solid var(--kt-border);
   background: linear-gradient(
     100deg,
-    rgba(255, 255, 255, 0.04) 30%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0.04) 70%
+    var(--kt-skeleton-a) 30%,
+    var(--kt-skeleton-b) 50%,
+    var(--kt-skeleton-a) 70%
   );
   background-size: 220% 100%;
   animation: kt-shimmer 1.3s linear infinite;
@@ -62,7 +62,7 @@
   padding: 10px;
   border-radius: var(--kt-radius-sm);
   border: 1px solid var(--kt-border);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--kt-tile-bg);
 }
 
 .kt-mod-icon {
@@ -129,7 +129,7 @@
   padding: 0 8px;
   border-radius: 8px;
   border: 1px solid var(--kt-border);
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--kt-input-bg);
   color: var(--kt-fg);
   font-family: inherit;
   font-size: 13px;

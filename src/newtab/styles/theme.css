@@ -1,11 +1,18 @@
-/* 主题令牌：模块与核心只允许使用这里的变量，不写死颜色 */
+/* ============================================================
+   主题令牌
+   - 深色为默认；浅色通过 <html data-theme="light"> 覆盖
+   - 元件与模块只允许消费这里的变量，不写死颜色
+   ============================================================ */
+
 :root {
+  /* ---------- 基础色（深色） ---------- */
   --kt-bg: #0d1117;
   --kt-fg: #e6edf3;
   --kt-muted: #8b949e;
   --kt-surface: rgba(22, 27, 34, 0.72);
   --kt-surface-strong: rgba(22, 27, 34, 0.92);
   --kt-border: rgba(240, 246, 252, 0.12);
+  --kt-border-strong: rgba(255, 255, 255, 0.25);
   --kt-accent: #58a6ff;
   --kt-accent-fg: #ffffff;
   --kt-danger: #f85149;
@@ -15,61 +22,152 @@
   --kt-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
   --kt-font: "Segoe UI", "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
 
-  /* ---------- 元件表面令牌 ----------
-     元件（核心与模块）不要写死背景，统一消费这两组变量：
-     - --kt-card-*  ：元件自己画的卡片（glass = none 时生效）
-     - --kt-glass-* ：宿主在玻璃模式下画的整体表面（元件自动变透明）
-     由 [data-glass] 模式块决定取值，实例级 data-glass 可覆盖全局。 */
-  --kt-card-bg: rgba(22, 27, 34, 0.72);
-  --kt-card-blur: blur(14px) saturate(125%);
-  --kt-card-border: 1px solid var(--kt-border);
-  --kt-card-shadow: var(--kt-shadow);
-  --kt-glass-bg: transparent;
-  --kt-glass-blur: none;
-  --kt-glass-border: 1px solid transparent;
-  --kt-glass-shadow: none;
-}
+  /* ---------- 交互与结构令牌（深色） ---------- */
+  --kt-hover: rgba(255, 255, 255, 0.08);
+  --kt-hover-soft: rgba(255, 255, 255, 0.06);
+  --kt-hover-strong: rgba(255, 255, 255, 0.16);
+  --kt-divider: rgba(255, 255, 255, 0.08);
+  --kt-input-bg: rgba(0, 0, 0, 0.25);
+  --kt-tile-bg: rgba(255, 255, 255, 0.03);
+  --kt-tile-bg-strong: rgba(255, 255, 255, 0.06);
+  --kt-scrim: rgba(0, 0, 0, 0.45);
+  --kt-scrim-soft: rgba(0, 0, 0, 0.25);
+  --kt-scrollbar: rgba(255, 255, 255, 0.25);
+  --kt-edit-outline: rgba(255, 255, 255, 0.28);
+  --kt-edit-outline-strong: rgba(255, 255, 255, 0.4);
+  --kt-skeleton-a: rgba(255, 255, 255, 0.04);
+  --kt-skeleton-b: rgba(255, 255, 255, 0.1);
+  --kt-backdrop: radial-gradient(120% 120% at 20% 0%, #16233a 0%, #0d1117 55%, #090c10 100%);
+  --kt-icon-tile-bg: rgba(255, 255, 255, 0.92);
+  --kt-icon-tile-border: rgba(255, 255, 255, 0.35);
 
-/* 无：保持元件自己的卡片外观（搜索胶囊 / 时钟卡片） */
-[data-glass="none"] {
-  --kt-card-bg: rgba(22, 27, 34, 0.72);
-  --kt-card-blur: blur(14px) saturate(125%);
-  --kt-card-border: 1px solid var(--kt-border);
-  --kt-card-shadow: var(--kt-shadow);
-  --kt-glass-bg: transparent;
-  --kt-glass-blur: none;
-  --kt-glass-border: 1px solid transparent;
-  --kt-glass-shadow: none;
-}
+  /* ---------- 卡片默认（无玻璃）与玻璃材质原料（深色） ---------- */
+  --kt-card-default-bg: rgba(22, 27, 34, 0.72);
+  --kt-card-default-blur: blur(14px) saturate(125%);
+  --kt-card-default-border: 1px solid var(--kt-border);
+  --kt-card-default-shadow: var(--kt-shadow);
 
-/* 磨砂玻璃：宿主统一画卡片，元件内容透明 */
-[data-glass="frost"] {
-  --kt-card-bg: transparent;
-  --kt-card-blur: none;
-  --kt-card-border: 1px solid transparent;
-  --kt-card-shadow: none;
-  --kt-glass-bg: rgba(18, 24, 32, 0.42);
-  --kt-glass-blur: blur(20px) saturate(150%);
-  --kt-glass-border: 1px solid rgba(255, 255, 255, 0.16);
-  --kt-glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.32);
-}
+  --kt-frost-bg: rgba(18, 24, 32, 0.42);
+  --kt-frost-blur: blur(20px) saturate(150%);
+  --kt-frost-border: 1px solid rgba(255, 255, 255, 0.16);
+  --kt-frost-shadow: 0 10px 30px rgba(0, 0, 0, 0.32);
 
-/* 液态玻璃：更强折射 + 顶部高光 + 内描边 */
-[data-glass="liquid"] {
-  --kt-card-bg: transparent;
-  --kt-card-blur: none;
-  --kt-card-border: 1px solid transparent;
-  --kt-card-shadow: none;
-  --kt-glass-bg: linear-gradient(
+  --kt-liquid-bg: linear-gradient(
     140deg,
     rgba(255, 255, 255, 0.18) 0%,
     rgba(255, 255, 255, 0.06) 42%,
     rgba(255, 255, 255, 0.12) 100%
   );
-  --kt-glass-blur: blur(28px) saturate(190%);
-  --kt-glass-border: 1px solid rgba(255, 255, 255, 0.3);
-  --kt-glass-shadow:
+  --kt-liquid-blur: blur(28px) saturate(190%);
+  --kt-liquid-border: 1px solid rgba(255, 255, 255, 0.3);
+  --kt-liquid-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.38),
     inset 0 -1px 0 rgba(255, 255, 255, 0.06),
     0 12px 34px rgba(0, 0, 0, 0.38);
+
+  /* 运行时派生：由 [data-glass] 模式覆盖 */
+  --kt-card-bg: var(--kt-card-default-bg);
+  --kt-card-blur: var(--kt-card-default-blur);
+  --kt-card-border: var(--kt-card-default-border);
+  --kt-card-shadow: var(--kt-card-default-shadow);
+  --kt-glass-bg: transparent;
+  --kt-glass-blur: none;
+  --kt-glass-border: 1px solid transparent;
+  --kt-glass-shadow: none;
+}
+
+/* ============================================================
+   浅色
+   ============================================================ */
+:root[data-theme="light"] {
+  --kt-bg: #f4f6fb;
+  --kt-fg: #1f2937;
+  --kt-muted: #475569;
+  --kt-surface: rgba(255, 255, 255, 0.72);
+  --kt-surface-strong: rgba(255, 255, 255, 0.94);
+  --kt-border: rgba(15, 23, 42, 0.12);
+  --kt-border-strong: rgba(15, 23, 42, 0.22);
+  --kt-accent: #2563eb;
+  --kt-accent-fg: #ffffff;
+  --kt-danger: #dc2626;
+  --kt-guide: #2563eb;
+  --kt-shadow: 0 8px 28px rgba(15, 23, 42, 0.14);
+
+  --kt-hover: rgba(15, 23, 42, 0.06);
+  --kt-hover-soft: rgba(15, 23, 42, 0.04);
+  --kt-hover-strong: rgba(15, 23, 42, 0.12);
+  --kt-divider: rgba(15, 23, 42, 0.08);
+  --kt-input-bg: rgba(255, 255, 255, 0.78);
+  --kt-tile-bg: rgba(255, 255, 255, 0.55);
+  --kt-tile-bg-strong: rgba(255, 255, 255, 0.78);
+  --kt-scrim: rgba(15, 23, 42, 0.32);
+  --kt-scrim-soft: rgba(15, 23, 42, 0.18);
+  --kt-scrollbar: rgba(15, 23, 42, 0.2);
+  --kt-edit-outline: rgba(15, 23, 42, 0.25);
+  --kt-edit-outline-strong: rgba(15, 23, 42, 0.42);
+  --kt-skeleton-a: rgba(15, 23, 42, 0.05);
+  --kt-skeleton-b: rgba(15, 23, 42, 0.1);
+  --kt-backdrop: radial-gradient(120% 120% at 20% 0%, #dbeafe 0%, #eef2ff 55%, #f8fafc 100%);
+  --kt-icon-tile-bg: rgba(255, 255, 255, 0.95);
+  --kt-icon-tile-border: rgba(15, 23, 42, 0.08);
+
+  --kt-card-default-bg: rgba(255, 255, 255, 0.88);
+  --kt-card-default-blur: blur(14px) saturate(120%);
+  --kt-card-default-border: 1px solid rgba(15, 23, 42, 0.1);
+  --kt-card-default-shadow: 0 6px 22px rgba(15, 23, 42, 0.12);
+
+  --kt-frost-bg: rgba(255, 255, 255, 0.72);
+  --kt-frost-blur: blur(20px) saturate(140%);
+  --kt-frost-border: 1px solid rgba(255, 255, 255, 0.85);
+  --kt-frost-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+
+  --kt-liquid-bg: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(255, 255, 255, 0.7) 45%,
+    rgba(255, 255, 255, 0.8) 100%
+  );
+  --kt-liquid-blur: blur(28px) saturate(170%);
+  --kt-liquid-border: 1px solid rgba(255, 255, 255, 0.95);
+  --kt-liquid-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.4),
+    0 12px 30px rgba(15, 23, 42, 0.16);
+}
+
+/* ============================================================
+   玻璃模式：把原料接到运行时变量上（与主题无关）
+   ============================================================ */
+
+[data-glass="frost"] {
+  --kt-card-bg: transparent;
+  --kt-card-blur: none;
+  --kt-card-border: 1px solid transparent;
+  --kt-card-shadow: none;
+  --kt-glass-bg: var(--kt-frost-bg);
+  --kt-glass-blur: var(--kt-frost-blur);
+  --kt-glass-border: var(--kt-frost-border);
+  --kt-glass-shadow: var(--kt-frost-shadow);
+}
+
+[data-glass="liquid"] {
+  --kt-card-bg: transparent;
+  --kt-card-blur: none;
+  --kt-card-border: 1px solid transparent;
+  --kt-card-shadow: none;
+  --kt-glass-bg: var(--kt-liquid-bg);
+  --kt-glass-blur: var(--kt-liquid-blur);
+  --kt-glass-border: var(--kt-liquid-border);
+  --kt-glass-shadow: var(--kt-liquid-shadow);
+}
+
+[data-glass="none"] {
+  --kt-card-bg: var(--kt-card-default-bg);
+  --kt-card-blur: var(--kt-card-default-blur);
+  --kt-card-border: var(--kt-card-default-border);
+  --kt-card-shadow: var(--kt-card-default-shadow);
+  --kt-glass-bg: transparent;
+  --kt-glass-blur: none;
+  --kt-glass-border: 1px solid transparent;
+  --kt-glass-shadow: none;
 }

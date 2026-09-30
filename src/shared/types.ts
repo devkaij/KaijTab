@@ -4,6 +4,9 @@ export const SCHEMA_VERSION = 1;
 
 export type SearchEngine = "bing" | "baidu" | "google";
 
+/** 主题模式：跟随系统 / 固定浅色 / 固定深色 */
+export type ThemeMode = "system" | "light" | "dark";
+
 export interface WidgetInstance {
   /** 实例 id，形如 inst_xxx */
   id: string;
@@ -61,13 +64,13 @@ export interface ModulesState {
   settings: Record<string, unknown>;
 }
 
-export type WallpaperKind = "video" | "image";
+export type WallpaperKind = "video" | "image" | "web";
 
 export interface WallpaperRecord {
   id: string;
   kind: WallpaperKind;
   name: string;
-  /** OPFS 路径，形如 wallpapers/wp_xxx.webm */
+  /** OPFS 路径，形如 wallpapers/wp_xxx.webm；web 类型为 OPFS 目录 web/wp_xxx */
   file: string;
   /** OPFS 缩略图路径 */
   thumb: string;
@@ -75,6 +78,10 @@ export interface WallpaperRecord {
   size: number;
   /** 秒，仅视频 */
   duration?: number;
+  /** 网页壁纸的入口文件（相对工程根目录） */
+  entry?: string;
+  /** 网页壁纸的文件数量 */
+  fileCount?: number;
   addedAt: number;
   source: "we" | "file";
 }
@@ -93,6 +100,8 @@ export interface SettingsState {
   syncEnabled: boolean;
   /** 元件背景的玻璃质感（可被实例级覆盖） */
   glassEffect: GlassEffect;
+  /** 深色 / 浅色 / 跟随系统 */
+  theme: ThemeMode;
   editorPrefs: {
     /** 网格吸附步长 px，null 为关闭 */
     grid: number | null;
