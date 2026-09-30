@@ -2,7 +2,7 @@
 import { SCHEMA_VERSION, type RootState } from "../types";
 import { mergeDefaults } from "./defaults";
 import { migrations as realMigrations, runMigrations, type Migration } from "../migrations";
-import { defaultLocalStore, type KVStore } from "./kv";
+import { chromeLocal, type KVStore } from "./kv";
 
 export const STATE_KEY = "state";
 
@@ -13,7 +13,7 @@ export interface LoadResult {
 }
 
 export async function loadState(
-  store: KVStore = defaultLocalStore(),
+  store: KVStore = chromeLocal(),
   migrationList: Migration[] = realMigrations,
 ): Promise<LoadResult> {
   const data = await store.get(STATE_KEY);
@@ -42,7 +42,7 @@ export async function loadState(
 
 export async function saveState(
   state: RootState,
-  store: KVStore = defaultLocalStore(),
+  store: KVStore = chromeLocal(),
 ): Promise<void> {
   await store.set({ [STATE_KEY]: state });
 }
@@ -50,7 +50,7 @@ export async function saveState(
 /** 拖拽这类高频场景用：合并多次请求，只落最后一次。 */
 export function createAutoSaver(
   getState: () => RootState,
-  store: KVStore = defaultLocalStore(),
+  store: KVStore = chromeLocal(),
   delayMs = 300,
 ): { save: () => void; flush: () => Promise<void> } {
   let timer: ReturnType<typeof setTimeout> | null = null;

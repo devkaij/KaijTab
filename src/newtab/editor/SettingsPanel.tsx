@@ -1,5 +1,4 @@
-import { extensionMode, settingsPanelOpen, setSyncEnabled, state, syncEnabled, updateSettings } from "@/newtab/store";
-import { APP_VERSION } from "@/shared/version";
+import { settingsPanelOpen, setSyncEnabled, state, syncEnabled, updateSettings } from "@/newtab/store";
 import type { GlassEffect, ThemeMode } from "@/shared/types";
 
 const GLASS_OPTIONS: Array<{ value: GlassEffect; label: string; hint: string }> = [
@@ -117,32 +116,24 @@ export function SettingsPanel() {
 
         <section class="kt-panel-section">
           <h4>同步</h4>
-          {extensionMode ? (
-            <>
-              <button
-                class={`kt-btn ${syncEnabled.value ? "kt-btn-primary" : ""}`}
-                onClick={() => void setSyncEnabled(!syncEnabled.value)}
-                data-testid="sync-toggle"
-                style={{ alignSelf: "flex-start" }}
-              >
-                {syncEnabled.value ? "同步已开启 · 点击关闭" : "开启浏览器账号同步"}
-              </button>
-              <p class="kt-panel-hint">
-                通过浏览器账号同步布局 / 快捷方式 / 设置；壁纸与模块私有数据只存本地。超出同步配额时会自动关闭。
-              </p>
-            </>
-          ) : (
-            <p class="kt-panel-hint" data-testid="sync-unavailable">
-              当前是纯网页（PWA）模式：没有账号同步通道，数据存在本机浏览器里。用扩展版可开启跨设备同步。
-            </p>
-          )}
+          <button
+            class={`kt-btn ${syncEnabled.value ? "kt-btn-primary" : ""}`}
+            onClick={() => void setSyncEnabled(!syncEnabled.value)}
+            data-testid="sync-toggle"
+            style={{ alignSelf: "flex-start" }}
+          >
+            {syncEnabled.value ? "同步已开启 · 点击关闭" : "开启浏览器账号同步"}
+          </button>
+          <p class="kt-panel-hint">
+            通过浏览器账号同步布局 / 快捷方式 / 设置；壁纸与模块私有数据只存本地。超出同步配额时会自动关闭。
+          </p>
         </section>
 
         <section class="kt-panel-section">
           <h4>关于</h4>
           <p class="kt-panel-hint">
-            KaijTab {APP_VERSION} · 运行模式：{extensionMode ? "扩展" : "纯网页（PWA）"} ·
-            自由画布新标签页。拖拽移动、角/边缩放、按住 Alt 关闭吸附、方向键微调、Ctrl+Z 撤销。
+            KaijTab {chrome.runtime.getManifest().version} · 自由画布新标签页。拖拽移动、角/边缩放、按住 Alt
+            关闭吸附、方向键微调、Ctrl+Z 撤销。
           </p>
         </section>
       </aside>

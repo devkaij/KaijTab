@@ -13,7 +13,7 @@ import type { GuideLine } from "./canvas/snapping";
 import { removeWallpaperFiles } from "./core/wallpaper/opfs";
 import { removeWebProject } from "./core/wallpaper/web";
 import { nextFreePos } from "./core/shortcut-layout";
-import { defaultSyncStore, isExtensionContext } from "@/shared/storage/kv";
+import { chromeSync } from "@/shared/storage/kv";
 import {
   applySyncSnapshot,
   packForSync,
@@ -37,8 +37,6 @@ export const booted = signal(false);
 export const canUndo = signal(false);
 export const canRedo = signal(false);
 export const contextMenu = signal<{ itemId: string; x: number; y: number } | null>(null);
-/** 运行模式：扩展 / 纯网页（PWA） */
-export const extensionMode = isExtensionContext();
 
 export const selectedItem = computed(() =>
   state.value.layout.items.find((i) => i.id === selectedId.value) ?? null,
@@ -474,7 +472,7 @@ export function scheduleSyncPush(): void {
 }
 
 export async function pushToSync(): Promise<void> {
-  const store = defaultSyncStore();
+  const store = chromeSync();
   try {
     const packed = packForSync(toSyncSnapshot(state.value));
     const existing = await store.get(null);
@@ -504,16 +502,12 @@ export async function pushToSync(): Promise<void> {
 }
 
 export async function setSyncEnabled(enabled: boolean): Promise<void> {
-  if (!isExtensionContext()) {
-    toast("网页模式下没有账号同步通道（用扩展版可用）");
-    return;
-  }
   syncEnabled.value = enabled;
   commit((s) => ({ ...s, settings: { ...s.settings, syncEnabled: enabled } }), {
     skipHistory: true,
   });
 
-  const store = defaultSyncStore();
+  const store = chromeSync();
   if (enabled) {
     await pushToSync();
     if (syncEnabled.value) {
@@ -540,18 +534,16 @@ export async function bootstrap(): Promise<void> {
   }
 
   // 浏览器账号同步：存在云端快照则以云端为准（壁纸与私有数据仍用本地）
-  if (isExtensionContext()) {
-    try {
-      const snapshot = unpackSync(await defaultSyncStore().get(null));
-      if (snapshot) {
-        state.value = applySyncSnapshot(state.value, snapshot);
-        await saver.flush();
-      }
-    } catch {
-      // 同步不可用不影响本地使用
+  try {
+    const snapshot = unpackSync(await chromeSync().get(null));
+    if (snapshot) {
+      state.value = applySyncSnapshot(state.value, snapshot);
+      await saver.flush();
     }
+  } catch {
+    // 同步不可用不影响本地使用
   }
-  syncEnabled.value = isExtensionContext() && state.value.settings.syncEnabled === true;
+  syncEnabled.value = state.value.settings.syncEnabled === true;
 
   seedDefaultLayout();
   booted.value = true;

@@ -3,8 +3,8 @@ import { resolve } from "node:path";
 
 const EXTENSION_PATH = resolve(import.meta.dirname, "../../dist");
 
-/** 手机/平板形态：触摸 + 窄视口（独立的 context，不走桌面 fixture） */
-test.describe("安卓手机 / 平板适配", () => {
+/** 触屏设备（触控笔记本/平板形态）：触摸 \+ 窄视口（独立的 context，不走桌面 fixture） */
+test.describe("触屏与窄窗口适配", () => {
   let context: BrowserContext;
   let page: Page;
 

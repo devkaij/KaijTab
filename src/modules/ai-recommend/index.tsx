@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import type { ModuleProps, ModuleRuntime } from "@/newtab/module-host/types";
 import { IconProbe } from "@/shared/ui/IconProbe";
-import { hasExtensionApi, isExtensionContext } from "@/shared/storage/kv";
 import {
   buildBrowsingContext,
   buildChatPayload,
@@ -59,7 +58,7 @@ async function gatherContext(runtime: ModuleRuntime): Promise<BrowsingContext> {
 
   let history: chrome.history.HistoryItem[] = [];
   try {
-    history = await (globalThis as { chrome?: typeof chrome }).chrome!.history.search({
+    history = await chrome.history.search({
       text: "",
       startTime: now.getTime() - HISTORY_LOOKBACK_MS,
       maxResults: 800,
@@ -70,7 +69,7 @@ async function gatherContext(runtime: ModuleRuntime): Promise<BrowsingContext> {
 
   let bookmarks: chrome.bookmarks.BookmarkTreeNode[] = [];
   try {
-    bookmarks = flattenBookmarks(await (globalThis as { chrome?: typeof chrome }).chrome!.bookmarks.getTree());
+    bookmarks = flattenBookmarks(await chrome.bookmarks.getTree());
   } catch {
     bookmarks = [];
   }
@@ -179,13 +178,7 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
       } catch (err) {
         if (controller.signal.aborted && !timedOut) return;
         const message = String((err as Error).message ?? err);
-        const friendly =
-          timedOut || message.includes("abort")
-            ? "请求超时"
-            : !isExtensionContext() && /Failed to fetch|NetworkError/i.test(message)
-              ? "请求被浏览器拦截（纯网页模式需要接口允许跨域 CORS）"
-              : message;
-        setError(friendly);
+        setError(timedOut || message.includes("abort") ? "请求超时" : message);
         setStatus("error");
       } finally {
         clearTimeout(timer);
@@ -218,18 +211,15 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
       setError("接口地址不合法（示例：https://api.openai.com/v1）");
       return;
     }
-    // 扩展模式：申请该域名的访问授权（网页模式没有主机权限，能否调用取决于接口是否允许跨域）
-    if (hasExtensionApi("permissions")) {
-      try {
-        const granted = await chrome.permissions.request({ origins: [origin] });
-        if (!granted) {
-          setError(`没有获得 ${origin} 的访问权限，无法调用你的接口`);
-          return;
-        }
-      } catch (err) {
-        setError(`申请权限失败：${String((err as Error).message ?? err)}`);
+    try {
+      const granted = await chrome.permissions.request({ origins: [origin] });
+      if (!granted) {
+        setError(`没有获得 ${origin} 的访问权限，无法调用你的接口`);
         return;
       }
+    } catch (err) {
+      setError(`申请权限失败：${String((err as Error).message ?? err)}`);
+      return;
     }
 
     runtimeRef.current.settings.set({ baseUrl, model });
