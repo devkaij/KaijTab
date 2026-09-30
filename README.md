@@ -6,6 +6,9 @@
 - 数据：本地存储 + 可选的浏览器账号同步（壁纸与模块私有数据永不上云）
 - 定位：自用，不上架
 
+> **项目现状（0.6.1）**：13 个模块 · 164 单测 + 58 E2E 全绿 · 核心 chunk gzip ≈33KB（模块按需加载，单个 0.6–2.8KB）· 冷启动到可交互 50–110ms · 仓库源码+文档+截图约 9MB（不含 `node_modules`）
+> 详细验收清单见 `docs/manual-checklist.md`，设计文档在 `docs/superpowers/specs/`，实施计划在 `docs/superpowers/plans/`。
+
 ![展示态](docs/screenshots/05-view-wallpaper.png)
 
 ## 快速开始
