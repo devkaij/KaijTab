@@ -3,6 +3,7 @@ import {
   addInstance,
   commit,
   moduleCenterOpen,
+  removeInstancesByType,
   state,
   viewport,
 } from "@/newtab/store";
@@ -96,14 +97,8 @@ function ModuleCard({ id, enabled }: { id: string; enabled: boolean }) {
                 return;
               }
               setBusy(true);
-              commit((s) => ({
-                ...s,
-                layout: { ...s.layout, items: s.layout.items.filter((i) => i.type !== id) },
-                modules: {
-                  ...s.modules,
-                  enabled: s.modules.enabled.filter((m) => m !== id),
-                },
-              }));
+              removeInstancesByType(id);
+              setEnabled(id, false);
               setBusy(false);
             } else {
               setEnabled(id, !enabled);

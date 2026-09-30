@@ -8,12 +8,14 @@ import {
   formatRelative,
   formatWeekday,
   isCacheFresh,
+  MAX_OUTPUT_TOKENS,
   MAX_TOP_SITES,
   normalizeBaseUrl,
   parseRecommendations,
   partOfDay,
   permissionOrigin,
   sanitizeUrl,
+  SYSTEM_PROMPT,
   truncate,
 } from "@/modules/ai-recommend/logic";
 
@@ -145,13 +147,36 @@ describe("请求构造", () => {
     expect(permissionOrigin("nope")).toBeNull();
   });
 
-  it("payload 包含模型、系统提示与用户数据", () => {
-    const payload = buildChatPayload(context, 5, "gpt-4o-mini");
+  it("payload 包含模型、系统提示、输出上限与用户数据", () => {
+    const payload = buildChatPayload(context, 5, "gpt-4o-mini") as {
+      model: string;
+      max_tokens: number;
+      messages: Array<{ role: string; content: string }>;
+      reasoning_effort?: string;
+    };
     expect(payload.model).toBe("gpt-4o-mini");
+    expect(payload.max_tokens).toBe(MAX_OUTPUT_TOKENS);
     expect(payload.messages[0]?.role).toBe("system");
     expect(payload.messages[1]?.content).toContain("请推荐 5 个链接");
     expect(payload.messages[1]?.content).toContain("example.com");
     expect(buildUserPrompt(context, 3)).toContain("请推荐 3 个链接");
+  });
+
+  it("低思考档位：附带思考控制字段，关闭时一个都不带", () => {
+    const low = buildChatPayload(context, 5, "m", { lowThinking: true }) as Record<string, unknown>;
+    expect(low.reasoning_effort).toBe("low");
+    expect(low.enable_thinking).toBe(false);
+    expect(low.thinking).toEqual({ type: "disabled" });
+
+    const plain = buildChatPayload(context, 5, "m") as Record<string, unknown>;
+    expect(plain.reasoning_effort).toBeUndefined();
+    expect(plain.enable_thinking).toBeUndefined();
+    expect(plain.thinking).toBeUndefined();
+  });
+
+  it("系统提示要求快速输出与简短理由", () => {
+    expect(SYSTEM_PROMPT).toContain("不要展开思考过程");
+    expect(SYSTEM_PROMPT).toContain("12 个字");
   });
 });
 

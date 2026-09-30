@@ -7,7 +7,6 @@ import {
   chatCompletionsUrl,
   formatRelative,
   HISTORY_LOOKBACK_MS,
-  isCacheFresh,
   normalizeBaseUrl,
   parseRecommendations,
   permissionOrigin,
@@ -105,6 +104,7 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const abortRef = useRef<AbortController | null>(null);
 
   const count =
     typeof props.count === "number" && props.count > 0 ? Math.min(8, props.count) : 5;
@@ -112,31 +112,52 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
 
   const refresh = useCallback(
     async (force: boolean) => {
+      void force; // 现在每次打开新标签页都重新生成，force 仅用于语义表达
       const current = readConfig(runtimeRef.current);
       if (!current.apiKey) return;
 
-      const cache = runtimeRef.current.data.get<Cache>("cache");
-      if (!force && cache && isCacheFresh(cache.at, Date.now())) {
-        setItems(cache.items);
-        setCachedAt(cache.at);
-        return;
-      }
+      // 中止上一次未完成的请求（避免切换/关闭后还有悬挂请求）
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
       setStatus("loading");
       setError(null);
+      let timedOut = false;
+      const timer = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, REQUEST_TIMEOUT_MS);
       try {
         const context = await gatherContext(runtimeRef.current);
-        const response = await fetch(chatCompletionsUrl(current.baseUrl), {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${current.apiKey}`,
-          },
-          body: JSON.stringify(buildChatPayload(context, count, current.model)),
-          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-        });
+        const url = chatCompletionsUrl(current.baseUrl);
+        const headers = {
+          "content-type": "application/json",
+          authorization: `Bearer ${current.apiKey}`,
+        };
+        const settings = runtimeRef.current.settings.get<{ thinkingFallback?: boolean }>();
+        const lowThinking = settings.thinkingFallback !== true;
+
+        const send = (thinking: boolean) =>
+          fetch(url, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(
+              buildChatPayload(context, count, current.model, { lowThinking: thinking }),
+            ),
+            signal: controller.signal,
+          });
+
+        let response = await send(lowThinking);
+        if (!response.ok && lowThinking && response.status === 400) {
+          // 该接口不认识"思考控制"字段：去掉后重试一次，并记住这个结论
+          runtimeRef.current.settings.set({ thinkingFallback: true });
+          response = await send(false);
+        }
+
         if (!response.ok) {
-          const hint = response.status === 401 || response.status === 403 ? "（API Key 或权限可能不对）" : "";
+          const hint =
+            response.status === 401 || response.status === 403 ? "（API Key 或权限可能不对）" : "";
           throw new Error(`接口返回 HTTP ${response.status}${hint}`);
         }
         const data = (await response.json()) as {
@@ -146,35 +167,36 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
         const parsed = parseRecommendations(content);
         if (parsed.length === 0) throw new Error("模型没有返回可用的推荐，换个模型或稍后重试");
 
+        // 元件可能已经被删掉：此时不写缓存，避免留下垃圾数据
+        if (!runtimeRef.current.app.alive()) return;
+
         const next: Cache = { at: Date.now(), items: parsed };
         runtimeRef.current.data.set("cache", next);
         setItems(parsed);
         setCachedAt(next.at);
         setStatus("idle");
       } catch (err) {
+        if (controller.signal.aborted && !timedOut) return;
         const message = String((err as Error).message ?? err);
-        setError(message.includes("abort") ? "请求超时" : message);
+        setError(timedOut || message.includes("abort") ? "请求超时" : message);
         setStatus("error");
+      } finally {
+        clearTimeout(timer);
       }
     },
     [count],
   );
 
-  // 打开新标签页时按需刷新（4 小时缓存）
+  // 每次打开新标签页都重新生成（缓存只作为失败时的兜底展示）
   useEffect(() => {
-    if (configured) void refresh(false);
+    if (configured) void refresh(true);
+    return () => abortRef.current?.abort();
   }, [configured, refresh]);
 
   useEffect(() => {
-    const off = runtimeRef.current.visibility.onChange((visible) => {
-      if (visible) void refresh(false);
-    });
     const ticker = setInterval(() => setNow(Date.now()), 30_000);
-    return () => {
-      off();
-      clearInterval(ticker);
-    };
-  }, [refresh]);
+    return () => clearInterval(ticker);
+  }, []);
 
   const saveConfig = async () => {
     const baseUrl = normalizeBaseUrl(draft.baseUrl);
@@ -272,8 +294,9 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
           ) : null}
         </div>
         <p class="kt-ai-note">
-          数据只发往你填写的接口；发送前已在本地聚合脱敏（只保留域名统计与少量标题，
-          查询串全部剥离）。保存时浏览器会弹出一次该域名的访问授权。
+          每次打开新标签页都会重新生成；发送前已在本地聚合脱敏（只保留域名统计与少量标题，
+          查询串全部剥离），默认请求低思考档位以加快输出（接口不支持时自动降级）。
+          数据只发往你填写的接口，保存时浏览器会弹出一次该域名的访问授权。
         </p>
         {preview ? (
           <pre class="kt-ai-preview" data-testid="ai-preview-json">
@@ -291,10 +314,13 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
         <span class="kt-ai-title">AI 推荐</span>
         <span class="kt-ai-meta">
           {status === "loading"
-            ? "正在思考…"
+            ? "正在生成…"
             : cachedAt
               ? `${formatRelative(cachedAt, now)} · ${config.model}`
               : config.model}
+          {runtime.settings.get<{ thinkingFallback?: boolean }>().thinkingFallback
+            ? " · 已降级"
+            : ""}
         </span>
         <button
           class="kt-ai-icon-btn"

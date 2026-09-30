@@ -50,6 +50,30 @@ async function addModule(page: Parameters<typeof enterEditMode>[0]): Promise<voi
   await expect(page.getByTestId("editor-toolbar")).toHaveCount(0);
 }
 
+function okResponse(title: string) {
+  return {
+    json: {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              recommendations: [{ title, url: "https://example.com/", reason: "测试" }],
+            }),
+          },
+        },
+      ],
+    },
+  };
+}
+
+async function moduleDataKeys(page: Parameters<typeof enterEditMode>[0]): Promise<string[]> {
+  return page.evaluate(async () => {
+    const data = await chrome.storage.local.get("state");
+    const state = data.state as { moduleData?: Record<string, unknown> };
+    return Object.keys(state.moduleData ?? {});
+  });
+}
+
 test.describe("AI 推荐模块", () => {
   test("未配置时显示接入表单，缺字段有提示，可预览脱敏后的数据", async ({ newTab }) => {
     await newTab.evaluate(async () => {
@@ -154,5 +178,67 @@ test.describe("AI 推荐模块", () => {
     expect(serialized).not.toContain("apiKey");
     // 非敏感的配置（接口地址 / 模型名）随设置一起同步，便于换设备直接用
     expect(serialized).toContain("test-model");
+  });
+
+  test("每次打开新标签页都重新生成（不依赖缓存）", async ({ newTab, context }) => {
+    const bodies: string[] = [];
+    await context.route(ENDPOINT_HOST, async (route) => {
+      bodies.push(route.request().postData() ?? "");
+      await route.fulfill(okResponse("每次重新生成"));
+    });
+
+    await addModule(newTab);
+    await seedAndReload(newTab);
+    await expect(newTab.getByTestId("ai-item").first()).toBeVisible({ timeout: 20_000 });
+    const firstOpen = bodies.length;
+    expect(firstOpen).toBeGreaterThanOrEqual(1);
+
+    // 再打开一次（等价于新开一个标签页）
+    await newTab.reload();
+    await expect(newTab.getByTestId("ai-item").first()).toBeVisible({ timeout: 20_000 });
+    await expect.poll(() => bodies.length, { timeout: 10_000 }).toBeGreaterThan(firstOpen);
+  });
+
+  test("默认请求低思考档位；接口不认识该字段时自动降级重试", async ({ newTab, context }) => {
+    const bodies: string[] = [];
+    await context.route(ENDPOINT_HOST, async (route) => {
+      const body = route.request().postData() ?? "";
+      bodies.push(body);
+      if (body.includes("reasoning_effort")) {
+        await route.fulfill({ status: 400, body: "unsupported parameter: reasoning_effort" });
+        return;
+      }
+      await route.fulfill(okResponse("降级成功"));
+    });
+
+    await addModule(newTab);
+    await seedAndReload(newTab);
+
+    await expect(newTab.getByTestId("ai-item").first()).toBeVisible({ timeout: 20_000 });
+    expect(bodies.length).toBeGreaterThanOrEqual(2);
+    expect(bodies[0]).toContain("reasoning_effort");
+    expect(bodies[0]).toContain("max_tokens");
+    expect(bodies[1]).not.toContain("reasoning_effort");
+    // 记住降级结论，界面上有提示
+    await expect(newTab.getByTestId("ai-recommend")).toContainText("已降级");
+  });
+
+  test("删除元件会连带清理它的私有数据（不留垃圾）", async ({ newTab, context }) => {
+    await context.route(ENDPOINT_HOST, (route) => route.fulfill(okResponse("垃圾清理测试")));
+
+    await addModule(newTab);
+    await seedAndReload(newTab);
+    await expect(newTab.getByTestId("ai-item").first()).toBeVisible({ timeout: 20_000 });
+
+    const before = await moduleDataKeys(newTab);
+    expect(before.some((key) => key.startsWith("ai-recommend:"))).toBe(true);
+
+    await enterEditMode(newTab);
+    await newTab.locator('.kt-item[data-widget-type="ai-recommend"]').click({ button: "right" });
+    await newTab.getByTestId("menu-delete").click();
+    await newTab.waitForTimeout(700);
+
+    const after = await moduleDataKeys(newTab);
+    expect(after.some((key) => key.startsWith("ai-recommend:"))).toBe(false);
   });
 });

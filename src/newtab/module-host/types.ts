@@ -92,6 +92,8 @@ export interface ModuleRuntime {
   /** 宿主提供的只读应用数据（模块无需直接访问 chrome.*） */
   app: {
     shortcuts(): Array<{ title: string; url: string }>;
+    /** 当前实例是否仍在画布上（异步回调写数据前先确认，避免给已删除的元件留垃圾数据） */
+    alive(): boolean;
   };
   /** 模块级设置（跨实例共享） */
   settings: {

@@ -152,32 +152,56 @@ export function buildBrowsingContext(input: {
 }
 
 export const SYSTEM_PROMPT = [
-  "你是浏览器新标签页的推荐助手。",
-  "根据用户近期的浏览统计、书签与快捷方式，推荐他此刻最可能想打开的链接。",
+  "你是浏览器新标签页的推荐助手，要求快速输出、不要展开思考过程。",
+  "根据用户近期的浏览统计、书签与快捷方式，直接给出他此刻最可能想打开的链接。",
   "规则：",
-  "1. 只推荐给定数据里出现过的站点，或由这些站点衍生出的常用页面（例如 bilibili.com 首页/热门页），不要编造无关站点；",
+  "1. 只推荐给定数据里出现过的站点，或由这些站点衍生出的常用页面，不要编造无关站点；",
   "2. 结合当前时间（工作日/周末、时段）调整偏好；",
-  "3. 每条推荐给出不超过 20 字的理由；",
+  "3. 理由不超过 12 个字，不要解释、不要客套；",
   '4. 只输出 JSON，格式为 {"recommendations":[{"title":"标题","url":"https://…","reason":"理由"}]}，不要输出任何其他文字。',
 ].join("\n");
 
 export function buildUserPrompt(context: BrowsingContext, count: number): string {
   return [
-    `请推荐 ${count} 个链接。`,
+    `请推荐 ${count} 个链接，直接给 JSON。`,
     "以下是用户的本地统计数据（已脱敏，不含查询串）：",
     JSON.stringify(context),
   ].join("\n");
 }
 
-export function buildChatPayload(context: BrowsingContext, count: number, model: string) {
-  return {
+/** 输出上限：8 条短推荐足够，限制长度能显著缩短推理模型的思考时间 */
+export const MAX_OUTPUT_TOKENS = 600;
+
+/** 低思考档位需要发出去的字段（各家叫法不同，多写几个；不支持的接口会忽略或 400） */
+export const THINKING_OFF_FIELDS: Record<string, unknown> = {
+  reasoning_effort: "low",
+  enable_thinking: false,
+  thinking: { type: "disabled" },
+};
+
+export interface PayloadOptions {
+  /** 是否附加"降低思考档位"字段 */
+  lowThinking?: boolean;
+  maxTokens?: number;
+}
+
+export function buildChatPayload(
+  context: BrowsingContext,
+  count: number,
+  model: string,
+  options: PayloadOptions = {},
+) {
+  const payload: Record<string, unknown> = {
     model,
     temperature: 0.5,
+    max_tokens: options.maxTokens ?? MAX_OUTPUT_TOKENS,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: buildUserPrompt(context, count) },
     ],
   };
+  if (options.lowThinking) Object.assign(payload, THINKING_OFF_FIELDS);
+  return payload;
 }
 
 /** 支持填 base（自动补 /chat/completions）或直接填完整端点 */

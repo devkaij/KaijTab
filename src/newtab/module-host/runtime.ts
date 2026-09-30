@@ -59,6 +59,7 @@ export function createRuntime(moduleId: string, instanceId: string): ModuleRunti
     app: {
       shortcuts: () =>
         state.value.shortcuts.items.map((item) => ({ title: item.title, url: item.url })),
+      alive: () => state.value.layout.items.some((item) => item.id === instanceId),
     },
 
     settings: {

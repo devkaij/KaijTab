@@ -102,6 +102,25 @@ export function otherRects(excludeId: string): Rect[] {
     .map((i) => instanceRect(i, vp));
 }
 
+/** 删除指定的模块私有数据（元件消失时同步清理，避免残留垃圾数据） */
+function pruneModuleData(
+  data: Record<string, unknown>,
+  items: Array<{ id: string; type: string }>,
+): Record<string, unknown> {
+  if (items.length === 0) return data;
+  const stale = new Set(items.map((item) => `${item.type}:${item.id}`));
+  const next: Record<string, unknown> = {};
+  let changed = false;
+  for (const [key, value] of Object.entries(data)) {
+    if (stale.has(key)) {
+      changed = true;
+      continue;
+    }
+    next[key] = value;
+  }
+  return changed ? next : data;
+}
+
 function withItems(s: RootState, items: WidgetInstance[]): RootState {
   return { ...s, layout: { ...s.layout, items } };
 }
@@ -161,8 +180,25 @@ export function addInstance(
 }
 
 export function removeInstance(id: string): void {
-  commit((s) => withItems(s, s.layout.items.filter((i) => i.id !== id)));
+  const item = state.value.layout.items.find((i) => i.id === id);
+  commit((s) => ({
+    ...s,
+    layout: { ...s.layout, items: s.layout.items.filter((i) => i.id !== id) },
+    moduleData: item ? pruneModuleData(s.moduleData, [item]) : s.moduleData,
+  }));
   if (selectedId.value === id) selectedId.value = null;
+}
+
+/** 删除某个类型的所有元件（停用模块时用），同时清理它们的私有数据 */
+export function removeInstancesByType(type: string): void {
+  const removed = state.value.layout.items.filter((i) => i.type === type);
+  if (removed.length === 0) return;
+  commit((s) => ({
+    ...s,
+    layout: { ...s.layout, items: s.layout.items.filter((i) => i.type !== type) },
+    moduleData: pruneModuleData(s.moduleData, removed),
+  }));
+  if (removed.some((i) => i.id === selectedId.value)) selectedId.value = null;
 }
 
 export function duplicateInstance(id: string): string | null {
