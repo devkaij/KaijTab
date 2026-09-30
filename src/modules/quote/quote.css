@@ -1,0 +1,30 @@
+.kt-quote {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(3px, 2cqh, 12px);
+  height: 100%;
+  padding: clamp(8px, 3cqw, 24px);
+  text-align: center;
+  color: var(--kt-fg);
+  background: var(--kt-card-bg);
+  border: var(--kt-card-border);
+  border-radius: var(--kt-radius);
+  backdrop-filter: var(--kt-card-blur);
+  -webkit-backdrop-filter: var(--kt-card-blur);
+  box-shadow: var(--kt-card-shadow);
+}
+
+.kt-quote-text {
+  margin: 0;
+  font-size: clamp(13px, min(4.2cqw, 11cqh), 34px);
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+}
+
+.kt-quote-from {
+  margin: 0;
+  font-size: clamp(10px, min(2.8cqw, 6cqh), 20px);
+  color: var(--kt-muted);
+}

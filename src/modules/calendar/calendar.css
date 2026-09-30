@@ -1,0 +1,151 @@
+.kt-cal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: clamp(3px, 1cqh, 8px);
+  padding: clamp(8px, 2.4cqw, 18px);
+  overflow: hidden;
+  color: var(--kt-fg);
+  background: var(--kt-card-bg);
+  border: var(--kt-card-border);
+  border-radius: var(--kt-radius);
+  backdrop-filter: var(--kt-card-blur);
+  -webkit-backdrop-filter: var(--kt-card-blur);
+  box-shadow: var(--kt-card-shadow);
+}
+
+.kt-cal-empty {
+  justify-content: center;
+  text-align: center;
+}
+
+.kt-cal-hint {
+  margin: 0;
+  font-size: clamp(10px, min(1.9cqw, 5cqh), 14px);
+  line-height: 1.6;
+  color: var(--kt-muted);
+}
+
+.kt-cal-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: clamp(4px, 1.2cqw, 10px);
+}
+
+.kt-cal-title {
+  font-size: clamp(11px, 2cqw, 15px);
+  font-weight: 600;
+}
+
+.kt-cal-meta {
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(10px, 1.6cqw, 13px);
+  color: var(--kt-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-cal-refresh {
+  appearance: none;
+  flex: none;
+  width: clamp(20px, 4.6cqh, 30px);
+  height: clamp(20px, 4.6cqh, 30px);
+  display: grid;
+  place-content: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--kt-muted);
+  font-size: clamp(12px, 2.2cqw, 17px);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.kt-cal-refresh:hover {
+  background: var(--kt-hover);
+  color: var(--kt-fg);
+}
+
+.kt-cal-btn {
+  appearance: none;
+  flex: none;
+  border: 1px solid var(--kt-accent);
+  background: var(--kt-accent);
+  color: var(--kt-accent-fg);
+  font-family: inherit;
+  font-size: clamp(10px, 1.7cqw, 13px);
+  padding: clamp(2px, 0.7cqh, 6px) clamp(8px, 1.8cqw, 14px);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.kt-cal-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--kt-scrollbar) transparent;
+}
+
+.kt-cal-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px clamp(6px, 1.6cqw, 14px);
+  padding: clamp(3px, 1cqh, 8px) clamp(4px, 1.2cqw, 10px);
+  border-radius: 8px;
+}
+
+.kt-cal-row:hover {
+  background: var(--kt-hover);
+}
+
+.kt-cal-when {
+  font-size: clamp(10px, 1.8cqw, 14px);
+  color: var(--kt-accent);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.kt-cal-summary {
+  font-size: clamp(11px, 1.95cqw, 15px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-cal-where {
+  grid-column: 2;
+  font-size: clamp(9px, 1.5cqw, 12px);
+  color: var(--kt-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-cal-skeleton {
+  height: clamp(22px, 5cqh, 36px);
+  border-radius: 8px;
+  background: linear-gradient(
+    100deg,
+    var(--kt-skeleton-a) 30%,
+    var(--kt-skeleton-b) 50%,
+    var(--kt-skeleton-a) 70%
+  );
+  background-size: 220% 100%;
+  animation: kt-shimmer 1.3s linear infinite;
+}
+
+.kt-cal-error {
+  flex: none;
+  padding: clamp(3px, 1cqh, 7px) clamp(6px, 1.6cqw, 12px);
+  border-radius: 8px;
+  border: 1px solid rgba(248, 81, 73, 0.4);
+  background: rgba(248, 81, 73, 0.14);
+  font-size: clamp(10px, 1.7cqw, 13px);
+}

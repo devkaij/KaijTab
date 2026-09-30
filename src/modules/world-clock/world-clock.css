@@ -1,0 +1,71 @@
+.kt-world {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(2px, 1cqh, 8px);
+  height: 100%;
+  padding: clamp(6px, 2cqw, 16px);
+  overflow: hidden;
+  color: var(--kt-fg);
+  background: var(--kt-card-bg);
+  border: var(--kt-card-border);
+  border-radius: var(--kt-radius);
+  backdrop-filter: var(--kt-card-blur);
+  -webkit-backdrop-filter: var(--kt-card-blur);
+  box-shadow: var(--kt-card-shadow);
+}
+
+.kt-world-row {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1.1fr;
+  align-items: baseline;
+  gap: clamp(4px, 1.4cqw, 12px);
+  padding: clamp(2px, 0.8cqh, 6px) clamp(4px, 1.2cqw, 10px);
+  border-radius: 8px;
+}
+
+.kt-world-local {
+  background: var(--kt-hover-soft);
+}
+
+.kt-world-city {
+  font-size: clamp(11px, min(3cqw, 8cqh), 20px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-world-badge {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  font-size: 0.75em;
+  font-style: normal;
+  color: var(--kt-accent-fg);
+  background: var(--kt-accent);
+}
+
+.kt-world-time {
+  font-size: clamp(14px, min(4.6cqw, 13cqh), 34px);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.kt-world-day {
+  margin-left: 6px;
+  font-size: 0.45em;
+  font-style: normal;
+  font-weight: 400;
+  color: var(--kt-muted);
+}
+
+.kt-world-meta {
+  font-size: clamp(9px, min(2.4cqw, 5.6cqh), 14px);
+  color: var(--kt-muted);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

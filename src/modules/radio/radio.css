@@ -1,0 +1,163 @@
+.kt-radio {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: clamp(3px, 1cqh, 8px);
+  padding: clamp(8px, 2.4cqw, 18px);
+  overflow: hidden;
+  color: var(--kt-fg);
+  background: var(--kt-card-bg);
+  border: var(--kt-card-border);
+  border-radius: var(--kt-radius);
+  backdrop-filter: var(--kt-card-blur);
+  -webkit-backdrop-filter: var(--kt-card-blur);
+  box-shadow: var(--kt-card-shadow);
+}
+
+.kt-radio-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: clamp(4px, 1.2cqw, 10px);
+}
+
+.kt-radio-title {
+  font-size: clamp(11px, 2cqw, 15px);
+  font-weight: 600;
+  flex: none;
+}
+
+.kt-radio-meta {
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(10px, 1.6cqw, 13px);
+  color: var(--kt-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-radio-refresh {
+  appearance: none;
+  flex: none;
+  width: clamp(20px, 4.6cqh, 30px);
+  height: clamp(20px, 4.6cqh, 30px);
+  display: grid;
+  place-content: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--kt-muted);
+  font-size: clamp(12px, 2.2cqw, 17px);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.kt-radio-refresh:hover {
+  background: var(--kt-hover);
+  color: var(--kt-fg);
+}
+
+.kt-radio-btn {
+  appearance: none;
+  flex: none;
+  border: 1px solid var(--kt-border-strong);
+  background: var(--kt-input-bg);
+  color: var(--kt-fg);
+  font-family: inherit;
+  font-size: clamp(10px, 1.7cqw, 13px);
+  padding: clamp(2px, 0.7cqh, 6px) clamp(8px, 1.8cqw, 14px);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.kt-radio-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--kt-scrollbar) transparent;
+}
+
+.kt-radio-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 1.6cqw, 12px);
+  padding: clamp(3px, 1cqh, 8px) clamp(4px, 1.2cqw, 10px);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--kt-fg);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.kt-radio-row:hover {
+  background: var(--kt-hover);
+}
+
+.kt-radio-active {
+  background: var(--kt-hover);
+  color: var(--kt-accent);
+}
+
+.kt-radio-play {
+  flex: none;
+  font-size: clamp(10px, 1.8cqw, 14px);
+  color: var(--kt-accent);
+}
+
+.kt-radio-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.kt-radio-name {
+  font-size: clamp(11px, 1.95cqw, 15px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-radio-tags {
+  font-size: clamp(9px, 1.5cqw, 12px);
+  color: var(--kt-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-radio-skeleton {
+  height: clamp(24px, 5.4cqh, 40px);
+  border-radius: 8px;
+  background: linear-gradient(
+    100deg,
+    var(--kt-skeleton-a) 30%,
+    var(--kt-skeleton-b) 50%,
+    var(--kt-skeleton-a) 70%
+  );
+  background-size: 220% 100%;
+  animation: kt-shimmer 1.3s linear infinite;
+}
+
+.kt-radio-empty {
+  margin: clamp(4px, 2cqh, 14px) 0;
+  font-size: clamp(10px, 1.7cqw, 13px);
+  color: var(--kt-muted);
+}
+
+.kt-radio-error {
+  flex: none;
+  padding: clamp(3px, 1cqh, 7px) clamp(6px, 1.6cqw, 12px);
+  border-radius: 8px;
+  border: 1px solid rgba(248, 81, 73, 0.4);
+  background: rgba(248, 81, 73, 0.14);
+  font-size: clamp(10px, 1.7cqw, 13px);
+}

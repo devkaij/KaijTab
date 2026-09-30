@@ -3,6 +3,7 @@ import type { ModuleProps } from "@/newtab/module-host/types";
 import {
   buildForecastUrl,
   buildGeocodeUrl,
+  formatDayLabel,
   formatUpdated,
   isFresh,
   parseForecast,
@@ -152,9 +153,24 @@ export default function Weather({ props, runtime }: ModuleProps) {
             </div>
           ) : null}
           <div class="kt-weather-foot">{formatUpdated(weather.fetchedAt, now)}</div>
+          {weather.daily.length > 1 ? (
+            <div class="kt-weather-week" data-testid="weather-week">
+              {weather.daily.map((day, index) => (
+                <div class="kt-weather-day" key={day.date || index}>
+                  <span class="kt-weather-day-label">{formatDayLabel(day.date, index)}</span>
+                  <span class="kt-weather-day-icon" aria-hidden="true">
+                    {weatherDescriptor(day.code).icon}
+                  </span>
+                  <span class="kt-weather-day-temp">
+                    {day.high != null ? `${Math.round(day.high)}°` : "--"}
+                    <em>{day.low != null ? `${Math.round(day.low)}°` : "--"}</em>
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </>
       )}
-
       {status === "error" ? (
         <div class="kt-weather-error" data-testid="weather-error">
           <span>{error ?? "获取失败"}</span>

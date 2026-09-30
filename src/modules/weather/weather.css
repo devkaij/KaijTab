@@ -69,6 +69,55 @@
   opacity: 0.75;
 }
 
+/* 7 天预报：元件太矮时自动隐藏，避免挤压主信息 */
+.kt-weather-week {
+  display: flex;
+  justify-content: space-between;
+  gap: clamp(2px, 0.8cqw, 8px);
+  width: 100%;
+  margin-top: clamp(2px, 0.8cqh, 6px);
+  padding-top: clamp(2px, 0.8cqh, 6px);
+  border-top: 1px solid var(--kt-divider);
+}
+
+@container (max-height: 190px) {
+  .kt-weather-week {
+    display: none;
+  }
+}
+
+.kt-weather-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.kt-weather-day-label {
+  font-size: clamp(8px, min(2.1cqw, 4.4cqh), 13px);
+  color: var(--kt-muted);
+  white-space: nowrap;
+}
+
+.kt-weather-day-icon {
+  font-size: clamp(12px, min(3.4cqw, 7cqh), 22px);
+  line-height: 1.1;
+}
+
+.kt-weather-day-temp {
+  font-size: clamp(9px, min(2.2cqw, 4.6cqh), 14px);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.kt-weather-day-temp em {
+  margin-left: 2px;
+  font-style: normal;
+  color: var(--kt-muted);
+}
+
 .kt-weather-placeholder {
   font-size: clamp(11px, min(3.6cqw, 8cqh), 22px);
   color: var(--kt-muted);

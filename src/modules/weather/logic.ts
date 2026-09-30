@@ -7,6 +7,14 @@ export interface GeoPlace {
   longitude: number;
 }
 
+export interface DailyForecast {
+  /** YYYY-MM-DD */
+  date: string;
+  code: number;
+  high: number | null;
+  low: number | null;
+}
+
 export interface WeatherNow {
   temperature: number;
   apparent: number;
@@ -15,6 +23,7 @@ export interface WeatherNow {
   code: number;
   high: number | null;
   low: number | null;
+  daily: DailyForecast[];
   fetchedAt: number;
 }
 
@@ -35,9 +44,9 @@ export function buildForecastUrl(latitude: number, longitude: number): string {
     latitude: String(latitude),
     longitude: String(longitude),
     current: "temperature_2m,apparent_temperature,weather_code,relative_humidity_2m,wind_speed_10m",
-    daily: "temperature_2m_max,temperature_2m_min",
+    daily: "weather_code,temperature_2m_max,temperature_2m_min",
     timezone: "auto",
-    forecast_days: "1",
+    forecast_days: "7",
   });
   return `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
 }
@@ -72,8 +81,21 @@ export function parseForecast(json: unknown, now = Date.now()): WeatherNow | nul
   if (temperature == null || code == null) return null;
 
   const daily = root?.daily;
-  const highs = daily?.temperature_2m_max;
-  const lows = daily?.temperature_2m_min;
+  const times = Array.isArray(daily?.time) ? (daily?.time as unknown[]) : [];
+  const highs = Array.isArray(daily?.temperature_2m_max) ? (daily?.temperature_2m_max as unknown[]) : [];
+  const lows = Array.isArray(daily?.temperature_2m_min) ? (daily?.temperature_2m_min as unknown[]) : [];
+  const codes = Array.isArray(daily?.weather_code) ? (daily?.weather_code as unknown[]) : [];
+
+  const days: DailyForecast[] = [];
+  const count = Math.max(times.length, highs.length, lows.length);
+  for (let i = 0; i < count; i++) {
+    const date = typeof times[i] === "string" ? (times[i] as string) : "";
+    const high = num(highs[i]);
+    const low = num(lows[i]);
+    const dayCode = num(codes[i]) ?? code;
+    if (!date && high == null && low == null) continue;
+    days.push({ date, code: dayCode, high, low });
+  }
 
   return {
     temperature,
@@ -81,10 +103,29 @@ export function parseForecast(json: unknown, now = Date.now()): WeatherNow | nul
     humidity: num(current.relative_humidity_2m),
     windSpeed: num(current.wind_speed_10m),
     code,
-    high: Array.isArray(highs) ? num(highs[0]) : null,
-    low: Array.isArray(lows) ? num(lows[0]) : null,
+    high: days[0]?.high ?? null,
+    low: days[0]?.low ?? null,
+    daily: days.slice(0, 7),
     fetchedAt: now,
   };
+}
+
+const WEEKDAY_SHORT = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+
+/** 第 index 天的标签：今天 / 明天 / 周X */
+export function formatDayLabel(date: string, index: number, today = new Date()): string {
+  if (index === 0) return "今天";
+  if (index === 1) return "明天";
+  const parsed = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!parsed) return `第 ${index + 1} 天`;
+  const target = new Date(Number(parsed[1]), Number(parsed[2]) - 1, Number(parsed[3]));
+  const diffDays = Math.round(
+    (target.getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) /
+      86_400_000,
+  );
+  if (diffDays === 0) return "今天";
+  if (diffDays === 1) return "明天";
+  return WEEKDAY_SHORT[target.getDay()] ?? "";
 }
 
 /** WMO weather code → 文案与图标 */

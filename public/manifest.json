@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "KaijTab",
-  "version": "0.4.2",
+  "version": "0.6.0",
   "description": "自由画布式新标签页：本地动态壁纸、模块按需加载、零服务端。",
   "minimum_chrome_version": "110",
   "icons": {
@@ -25,7 +25,14 @@
   "permissions": ["storage", "unlimitedStorage", "favicon", "bookmarks", "history"],
   "host_permissions": [
     "https://api.open-meteo.com/*",
-    "https://geocoding-api.open-meteo.com/*"
+    "https://geocoding-api.open-meteo.com/*",
+    "https://top.baidu.com/*",
+    "https://www.toutiao.com/*",
+    "https://app.bilibili.com/*",
+    "https://api.juejin.cn/*",
+    "https://api.github.com/*",
+    "https://de1.api.radio-browser.info/*",
+    "https://all.api.radio-browser.info/*"
   ],
   "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
   "background": {
