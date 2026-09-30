@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildForecastUrl,
   buildGeocodeUrl,
+  formatDayLabel,
   formatUpdated,
   isFresh,
   parseForecast,
@@ -82,8 +83,31 @@ describe("parseForecast", () => {
   });
 });
 
-describe("weatherDescriptor", () => {
-  it("覆盖主要天气码", () => {
+describe("formatDayLabel（跨午夜也稳定）", () => {
+  it("以列表首日为基准：今天 / 明天 / 周X", () => {
+    const base = new Date(2026, 9, 1); // 2026-10-01 周四
+    expect(formatDayLabel("2026-10-01", 0, base)).toBe("今天");
+    expect(formatDayLabel("2026-10-02", 1, base)).toBe("明天");
+    expect(formatDayLabel("2026-10-03", 2, base)).toBe("周六");
+    expect(formatDayLabel("2026-10-06", 5, base)).toBe("周二");
+  });
+
+  it("跨过午夜后不会出现两个「明天」", () => {
+    // 数据是 09-30 抓的，但此刻已是 10-01
+    const base = new Date(2026, 8, 30);
+    const labels = ["2026-09-30", "2026-10-01", "2026-10-02", "2026-10-03"].map((date, index) =>
+      formatDayLabel(date, index, base),
+    );
+    expect(labels).toEqual(["今天", "明天", "周五", "周六"]);
+  });
+
+  it("坏日期与缺省基准都不崩", () => {
+    expect(formatDayLabel("bad", 3, new Date(2026, 9, 1))).toBe("第 4 天");
+    expect(formatDayLabel("2026-10-05", 4)).toBeTruthy();
+  });
+});
+
+describe("weatherDescriptor", () => {  it("覆盖主要天气码", () => {
     expect(weatherDescriptor(0).label).toBe("晴");
     expect(weatherDescriptor(2).label).toBe("多云");
     expect(weatherDescriptor(45).label).toBe("雾");

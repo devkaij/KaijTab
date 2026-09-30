@@ -112,17 +112,29 @@ export function parseForecast(json: unknown, now = Date.now()): WeatherNow | nul
 
 const WEEKDAY_SHORT = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
-/** 第 index 天的标签：今天 / 明天 / 周X */
-export function formatDayLabel(date: string, index: number, today = new Date()): string {
+function parseIsoDate(date: string): Date | null {
+  const parsed = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!parsed) return null;
+  return new Date(Number(parsed[1]), Number(parsed[2]) - 1, Number(parsed[3]));
+}
+
+/**
+ * 第 index 天的标签：今天 / 明天 / 周X。
+ * baseDate 用列表第一天的日期——预报是按抓取时刻生成的，
+ * 若用"当前时间"当基准，跨过午夜后会出现连着两个"明天"。
+ */
+export function formatDayLabel(date: string, index: number, baseDate?: Date): string {
   if (index === 0) return "今天";
   if (index === 1) return "明天";
-  const parsed = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
-  if (!parsed) return `第 ${index + 1} 天`;
-  const target = new Date(Number(parsed[1]), Number(parsed[2]) - 1, Number(parsed[3]));
-  const diffDays = Math.round(
-    (target.getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) /
-      86_400_000,
-  );
+  const target = parseIsoDate(date);
+  if (!target) return `第 ${index + 1} 天`;
+  const base = baseDate
+    ? new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate())
+    : (() => {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      })();
+  const diffDays = Math.round((target.getTime() - base.getTime()) / 86_400_000);
   if (diffDays === 0) return "今天";
   if (diffDays === 1) return "明天";
   return WEEKDAY_SHORT[target.getDay()] ?? "";

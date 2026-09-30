@@ -27,6 +27,11 @@ const extensionId = new URL(worker.url()).host;
 const page = await context.newPage();
 await page.goto(`chrome-extension://${extensionId}/main.html`);
 await page.locator(".kt-item").first().waitFor();
+// 显式固定主题：前半程深色（更能体现玻璃质感），第 10 步再切浅色
+await page.evaluate(() => {
+  window.__kaijtab?.updateSettings({ theme: "dark" });
+});
+await page.waitForTimeout(800);
 await page.waitForTimeout(1200); // 等网站图标加载
 
 const enterEdit = async () => {

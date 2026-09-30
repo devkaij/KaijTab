@@ -116,6 +116,9 @@ export default function Weather({ props, runtime }: ModuleProps) {
   }, [load]);
 
   const weather = cache.weather;
+  const forecastBase = weather?.daily[0]?.date
+    ? new Date(`${weather.daily[0].date}T00:00:00`)
+    : undefined;
   const descriptor = weather ? weatherDescriptor(weather.code) : null;
 
   return (
@@ -157,7 +160,7 @@ export default function Weather({ props, runtime }: ModuleProps) {
             <div class="kt-weather-week" data-testid="weather-week">
               {weather.daily.map((day, index) => (
                 <div class="kt-weather-day" key={day.date || index}>
-                  <span class="kt-weather-day-label">{formatDayLabel(day.date, index)}</span>
+                  <span class="kt-weather-day-label">{formatDayLabel(day.date, index, forecastBase)}</span>
                   <span class="kt-weather-day-icon" aria-hidden="true">
                     {weatherDescriptor(day.code).icon}
                   </span>

@@ -47,23 +47,38 @@
   --kt-card-default-border: 1px solid var(--kt-border);
   --kt-card-default-shadow: var(--kt-shadow);
 
-  --kt-frost-bg: rgba(18, 24, 32, 0.42);
-  --kt-frost-blur: blur(20px) saturate(150%);
-  --kt-frost-border: 1px solid rgba(255, 255, 255, 0.16);
-  --kt-frost-shadow: 0 10px 30px rgba(0, 0, 0, 0.32);
+  /* 磨砂玻璃：中等模糊 + 提饱和 + 顶部镜面高光 + 内侧冷调深度 */
+  --kt-frost-bg: rgba(20, 26, 36, 0.52);
+  --kt-frost-blur: blur(26px) saturate(145%) brightness(1.04);
+  --kt-frost-border: 1px solid rgba(255, 255, 255, 0.2);
+  --kt-frost-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 24px rgba(255, 255, 255, 0.05),
+    inset 0 6px 22px rgba(6, 10, 18, 0.14),
+    0 10px 30px rgba(0, 0, 0, 0.34);
 
+  /* 液态玻璃：折射 + 强模糊 + 更亮的镜面环与内部反光 */
   --kt-liquid-bg: linear-gradient(
-    140deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    rgba(255, 255, 255, 0.06) 42%,
-    rgba(255, 255, 255, 0.12) 100%
-  );
-  --kt-liquid-blur: blur(28px) saturate(190%);
-  --kt-liquid-border: 1px solid rgba(255, 255, 255, 0.3);
+      140deg,
+      rgba(255, 255, 255, 0.26) 0%,
+      rgba(255, 255, 255, 0.07) 42%,
+      rgba(255, 255, 255, 0.16) 100%
+    ),
+    rgba(9, 13, 20, 0.3);
+  --kt-liquid-blur: url(#kt-liquid-refraction) blur(34px) saturate(175%) brightness(1.06);
+  --kt-liquid-border: 1px solid rgba(255, 255, 255, 0.34);
   --kt-liquid-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.38),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
-    0 12px 34px rgba(0, 0, 0, 0.38);
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.55),
+    inset 0 0 3px 1px rgba(255, 255, 255, 0.22),
+    inset 0 0 14px 4px rgba(255, 255, 255, 0.09),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 8px 26px rgba(6, 10, 18, 0.12),
+    0 14px 38px rgba(0, 0, 0, 0.4);
+
+  /* 材质颗粒：压住大面积模糊带来的色带，玻璃才像"有质感的东西" */
+  --kt-glass-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
+  --kt-glass-grain-opacity: 0.045;
 
   /* 运行时派生：由 [data-glass] 模式覆盖 */
   --kt-card-bg: var(--kt-card-default-bg);
@@ -116,19 +131,33 @@
   --kt-card-default-border: 1px solid rgba(15, 23, 42, 0.1);
   --kt-card-default-shadow: 0 6px 22px rgba(15, 23, 42, 0.12);
 
-  --kt-frost-bg: rgba(255, 255, 255, 0.72);
-  --kt-frost-blur: blur(20px) saturate(140%);
+  --kt-frost-bg: rgba(255, 255, 255, 0.7);
+  --kt-frost-blur: blur(30px) saturate(122%) brightness(1.06);
   --kt-frost-border: 1px solid rgba(255, 255, 255, 0.85);
-  --kt-frost-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  --kt-frost-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 0 24px rgba(255, 255, 255, 0.35),
+    inset 0 6px 22px rgba(15, 23, 42, 0.06),
+    0 10px 30px rgba(15, 23, 42, 0.14);
 
   --kt-liquid-bg: linear-gradient(
     140deg,
-    rgba(255, 255, 255, 0.88) 0%,
-    rgba(255, 255, 255, 0.7) 45%,
-    rgba(255, 255, 255, 0.8) 100%
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.66) 45%,
+    rgba(255, 255, 255, 0.82) 100%
   );
-  --kt-liquid-blur: blur(28px) saturate(170%);
+  --kt-liquid-blur: url(#kt-liquid-refraction) blur(36px) saturate(165%) brightness(1.06);
   --kt-liquid-border: 1px solid rgba(255, 255, 255, 0.95);
+  --kt-liquid-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 1),
+    inset 0 0 3px 1px rgba(255, 255, 255, 0.7),
+    inset 0 0 14px 4px rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 8px 26px rgba(15, 23, 42, 0.05),
+    0 14px 34px rgba(15, 23, 42, 0.18);
+
+  --kt-glass-grain-opacity: 0.05;
   --kt-liquid-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
     inset 0 -1px 0 rgba(255, 255, 255, 0.4),

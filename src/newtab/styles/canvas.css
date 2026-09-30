@@ -40,6 +40,7 @@
 }
 
 .kt-widget {
+  position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -54,6 +55,43 @@
   -webkit-backdrop-filter: var(--kt-glass-blur);
   border: var(--kt-glass-border);
   box-shadow: var(--kt-glass-shadow);
+}
+
+/* 颗粒层：压色带、加材质感（叠在最上层，不影响交互） */
+.kt-item[data-glass="frost"] .kt-widget::after,
+.kt-item[data-glass="liquid"] .kt-widget::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: var(--kt-glass-grain);
+  background-size: 160px 160px;
+  opacity: var(--kt-glass-grain-opacity);
+  mix-blend-mode: overlay;
+}
+
+/* 液态玻璃的镜面反光：左上角一道斜向高光 */
+.kt-item[data-glass="liquid"] .kt-widget::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0.05) 28%,
+    transparent 52%
+  );
+}
+
+/* SVG 滤镜定义容器：不占位 */
+.kt-svg-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 
 .kt-item[data-editing="true"] .kt-widget {

@@ -10,6 +10,7 @@ import { WallpaperPanel } from "./core/wallpaper/WallpaperPanel";
 import { ModuleCenter } from "./module-host/ModuleCenter";
 import { InstanceSettingsDialog } from "./module-host/InstanceSettings";
 import { SettingsPanel } from "./editor/SettingsPanel";
+import { GlassFilters } from "./ui/GlassFilters";
 import { Toasts } from "./ui/toast";
 
 export function App() {
@@ -30,6 +31,7 @@ export function App() {
 
   return (
     <div class="kt-app" data-editing={editing.value ? "true" : "false"}>
+      <GlassFilters />
       <WallpaperLayer />
       <Canvas />
       <Toolbar />

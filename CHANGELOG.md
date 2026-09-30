@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 0.6.1 — 2026-10-01
+
+玻璃材质重做（实测调参 + 参考社区对 Apple Liquid Glass 的 CSS/SVG 复现）：
+
+- **液态玻璃**新增真实折射：内联 SVG `feTurbulence + feDisplacementMap` 生成位移场，通过 `backdrop-filter: url(#kt-liquid-refraction)` 让背景像素发生弯曲（Chromium 支持，正好覆盖 Edge/Chrome）；配合 `blur 34px + saturate 175% + brightness 1.06`
+- **镜面高光按物理分层**：1.5px 顶部亮边 → 3px 亮环 → 14px 柔光 → 底部反光 → 内侧冷调深度 → 外投影；液态另加一道左上斜向反光层
+- **深色液态加炭灰暗纱**（`rgba(9,13,20,0.3)`）：避免霓虹壁纸下文字对比度不稳
+- **磨砂玻璃**改为"更乳白、更低饱和"：`blur 30px + saturate 122%`（之前 150% 会把深色壁纸衬得发彩），tint 提高到 0.7
+- **颗粒层**：两种材质都叠一层 `feTurbulence` 噪声（overlay 混合、3.5–5% 不透明度），压住大面积模糊的色带，质感更像"材料"而非"半透明色块"
+- 材质对比图：`docs/screenshots/15-glass-materials.jpg`（深色）、`16-glass-materials-light.jpg`（浅色）
+- 顺带修复：天气 7 天标签改为**以预报列表首日为基准**，跨过午夜不会再出现两个"明天"（新增 3 条单测）
+- 截图脚本显式固定主题（前半程深色、第 10 步起浅色），产出不再受系统配色影响
+- 测试：164 单测 + 58 E2E
+
 ## 0.6.0 — 2026-09-30
 
 模块库第二批（7 个，含 5 个联网模块）：
