@@ -241,7 +241,93 @@ await page.evaluate(() => {
 await page.waitForTimeout(1000);
 await shot("11-ai-recommend.png");
 
-// 12. 手机竖屏（触摸适配）：独立 profile，看到的是手机友好的首次布局
+// 12. 第二批模块：清掉旧模块，只留新模块，摆成整齐两行
+await enterEdit();
+await page.evaluate(() => {
+  const store = window.__kaijtab;
+  const keep = new Set([
+    "core:search",
+    "core:shortcuts",
+    "quote",
+    "world-clock",
+    "hot-list",
+    "rss",
+    "calendar",
+    "radio",
+  ]);
+  for (const item of store.state.value.layout.items.filter((i) => !keep.has(i.type))) {
+    store.removeInstance(item.id);
+  }
+});
+for (const id of ["quote", "world-clock", "hot-list", "rss", "calendar", "radio"]) {
+  await addModule(id);
+}
+
+// 给 RSS / 日历注入示例内容（跳过需要用户手势的授权弹窗）
+await page.evaluate(() => {
+  const store = window.__kaijtab;
+  const now = Date.now();
+  store.commit((raw) => {
+    const state = structuredClone(raw);
+    const today = new Date();
+    today.setHours(14, 0, 0, 0);
+    for (const item of state.layout.items) {
+      if (item.type === "rss") {
+        item.props.feeds = "https://example.com/feed.xml";
+        state.moduleData[`rss:${item.id}`] = {
+          cache: {
+            at: now,
+            items: [
+              { title: "AI 编码代理正在改变前端工程", url: "https://example.com/1", time: now - 1_800_000, source: "掘金" },
+              { title: "WebGPU 实战：把着色器搬进浏览器", url: "https://example.com/2", time: now - 7_200_000, source: "InfoQ" },
+              { title: "Rust 1.90 发布：编译速度再提升", url: "https://example.com/3", time: now - 10_800_000, source: "Rust Blog" },
+            ],
+          },
+        };
+      }
+      if (item.type === "calendar") {
+        item.props.url = "https://example.com/cal.ics";
+        state.moduleData[`calendar:${item.id}`] = {
+          cache: {
+            at: now,
+            events: [
+              { uid: "e1", summary: "产品评审会", start: today.toISOString(), end: null, allDay: false, location: "会议室 A" },
+              { uid: "e2", summary: "季度总结（全天）", start: new Date(today.getTime() + 86_400_000).toISOString(), end: null, allDay: true },
+              { uid: "e3", summary: "周五分享：本地模型部署", start: new Date(now + 2 * 86_400_000).toISOString(), end: null, allDay: false },
+            ],
+          },
+        };
+      }
+    }
+    return state;
+  });
+});
+await page.waitForTimeout(500);
+
+// 注入示例数据后刷新一次，让 RSS / 日历从缓存渲染（刷新会退回展示态）
+await page.reload();
+await page.locator(".kt-item").first().waitFor({ timeout: 20_000 });
+await page.waitForTimeout(2500);
+
+await page.evaluate(() => {
+  const store = window.__kaijtab;
+  const boxes = {
+    quote: [40, 470, 380, 200],
+    "world-clock": [440, 470, 380, 200],
+    "hot-list": [840, 470, 420, 210],
+    rss: [40, 690, 380, 190],
+    calendar: [440, 690, 380, 190],
+    radio: [840, 690, 420, 190],
+  };
+  for (const [type, [x, y, w, h]] of Object.entries(boxes)) {
+    const item = store.state.value.layout.items.find((i) => i.type === type);
+    if (item) store.updateItemRect(item.id, { x, y, w, h });
+  }
+});
+await page.waitForTimeout(1500);
+await shot("14-new-modules.png");
+
+// 13. 手机竖屏（触摸适配）：独立 profile，看到的是手机友好的首次布局
 const phone = await chromium.launchPersistentContext("", {
   headless: false,
   viewport: { width: 390, height: 844 },
