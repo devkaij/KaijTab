@@ -69,9 +69,10 @@ describe("validateWebProject", () => {
       error: "工程里找不到入口 HTML（index.html）",
     });
     const many = Array.from({ length: WEB_MAX_FILES + 1 }, (_, i) => entry(`assets/${i}.js`));
-    expect(validateWebProject([entry("index.html"), ...many]).error).toContain("文件数");
-    const huge = [entry("index.html"), entry("big.bin", 400 * 1024 * 1024)];
-    expect(validateWebProject(huge).error).toContain("体积");
+    const manyResult = validateWebProject([entry("index.html"), ...many]);
+    expect("error" in manyResult ? manyResult.error : "").toContain("文件数");
+    const hugeResult = validateWebProject([entry("index.html"), entry("big.bin", 400 * 1024 * 1024)]);
+    expect("error" in hugeResult ? hugeResult.error : "").toContain("体积");
   });
 });
 
