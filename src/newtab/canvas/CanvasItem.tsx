@@ -48,7 +48,11 @@ function runPointerGesture(el: HTMLElement, ev: PointerEvent, handlers: GestureH
   let raf = 0;
   let lastEv = ev;
 
-  el.setPointerCapture(ev.pointerId);
+  try {
+    el.setPointerCapture(ev.pointerId);
+  } catch {
+    // 合成事件或指针已释放：忽略；后续事件仍会派发到该元素
+  }
   el.style.willChange = "transform";
 
   const frame = () => {
@@ -153,9 +157,29 @@ export function CanvasItem({ item }: { item: WidgetInstance }) {
     if (!el) return;
     const startRect = rect;
     let latest: Rect = startRect;
+    let moved = false;
+    let longPressed = false;
+
+    // 触屏/手写笔：长按 500ms 打开上下文菜单（手机上等价于右键）
+    const isTouchLike = e.pointerType !== "mouse";
+    const pressX = e.clientX;
+    const pressY = e.clientY;
+    const pressTimer = isTouchLike
+      ? window.setTimeout(() => {
+          if (moved) return;
+          longPressed = true;
+          openContextMenu(item.id, pressX, pressY);
+        }, 500)
+      : 0;
 
     runPointerGesture(el, e, {
       onFrame: (ev, { dx, dy }) => {
+        if (!moved && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+          moved = true;
+          if (pressTimer) clearTimeout(pressTimer);
+        }
+        if (longPressed) return; // 菜单已弹出，不再跟随移动
+
         let r: Rect = { ...startRect, x: startRect.x + dx, y: startRect.y + dy };
         let nextGuides: GuideLine[] = [];
         if (!ev.altKey) {
@@ -176,7 +200,13 @@ export function CanvasItem({ item }: { item: WidgetInstance }) {
         guides.value = nextGuides;
       },
       onDone: () => {
+        if (pressTimer) clearTimeout(pressTimer);
         guides.value = [];
+        if (longPressed) {
+          // 长按只是弹菜单：位置回滚，不写入
+          applyRect(el, startRect);
+          return;
+        }
         if (latest.x !== startRect.x || latest.y !== startRect.y) {
           updateItemRect(item.id, latest);
         }

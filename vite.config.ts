@@ -24,11 +24,13 @@ export default defineConfig({
         main: resolve(root, "src/newtab/main.html"),
         background: resolve(root, "src/background/index.ts"),
         whost: resolve(root, "src/whost/index.ts"),
+        appSw: resolve(root, "src/web/app-sw.ts"),
       },
       output: {
         entryFileNames: (chunk) => {
           if (chunk.name === "background") return "background.js";
           if (chunk.name === "whost") return "whost-sw.js";
+          if (chunk.name === "appSw") return "app-sw.js";
           return "assets/[name]-[hash].js";
         },
         chunkFileNames: "assets/[name]-[hash].js",

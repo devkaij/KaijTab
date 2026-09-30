@@ -12,6 +12,10 @@ body {
   color: var(--kt-fg);
   font-family: var(--kt-font);
   font-size: 14px;
+  /* 触屏：去掉点按高亮、避免双击缩放误触（仍保留捏合缩放） */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overscroll-behavior: none;
 }
 
 #app {
@@ -35,4 +39,84 @@ body {
 .boot p {
   margin: 0;
   color: var(--kt-muted);
+}
+
+/* ---------- 触屏适配（手机 / 平板 / 触控本） ---------- */
+
+@media (pointer: coarse) {
+  /* 触屏没有 hover：只靠悬停才出现的操作必须常驻可见 */
+  .kt-edit-entry {
+    opacity: 1 !important;
+  }
+
+  /* 主要操作放大到可点区域 */
+  .kt-btn,
+  .kt-menu-item,
+  .kt-segmented-item,
+  .kt-ai-btn,
+  .kt-panel-close,
+  .kt-bm-back {
+    min-height: 44px;
+  }
+
+  .kt-sc-action,
+  .kt-ai-icon-btn,
+  .kt-bm-back {
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .kt-todo-check {
+    width: 22px;
+    height: 22px;
+  }
+
+  .kt-ai-field input,
+  .kt-field input,
+  .kt-field select {
+    min-height: 44px;
+  }
+}
+
+/* 平板/手机窄屏：面板改为全屏抽屉，工具栏换行 */
+@media (max-width: 720px) {
+  .kt-panel {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    border-radius: 0;
+    border: 0;
+    padding-top: max(14px, env(safe-area-inset-top));
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+
+  .kt-modal {
+    width: calc(100% - 24px);
+    max-height: calc(100% - 48px);
+    overflow: auto;
+  }
+
+  .kt-toolbar {
+    left: 8px;
+    right: 8px;
+    transform: none;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 6px 8px;
+  }
+
+  .kt-toolbar-hint {
+    display: none;
+  }
+
+  .kt-toolbar-sep {
+    display: none;
+  }
+
+  .kt-wallpaper-error-text {
+    max-width: 80vw;
+  }
 }
