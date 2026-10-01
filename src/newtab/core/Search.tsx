@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { createPortal } from "preact/compat";
 import { commit, state } from "@/newtab/store";
 import type { SearchEngine } from "@/shared/types";
-import { gatherSuggestions, type Suggestion } from "./suggestions";
+import { fetchEngineSuggestions, gatherSuggestions, type Suggestion } from "./suggestions";
 
 const ENGINES: Record<SearchEngine, { name: string; url: (q: string) => string }> = {
   bing: { name: "Bing", url: (q) => `https://www.bing.com/search?q=${encodeURIComponent(q)}` },
@@ -32,38 +32,57 @@ function normalizeUrl(value: string): string {
 export function Search({ instanceId }: { instanceId: string; props: Record<string, unknown> }) {
   const [value, setValue] = useState("");
   const [panel, setPanel] = useState<Panel>(null);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [engineSuggestions, setEngineSuggestions] = useState<string[]>([]);
+  const [localSuggestions, setLocalSuggestions] = useState<Suggestion[]>([]);
   const [anchor, setAnchor] = useState<Anchor | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<HTMLButtonElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const engine = state.value.settings.searchEngine;
   const engineInfo = ENGINES[engine];
+
+  // 合并成一行一条：先在线联想，再本地的历史/书签
+  const rows: Suggestion[] = [
+    ...engineSuggestions.map((title) => ({ kind: "engine" as const, title, url: "" })),
+    ...localSuggestions,
+  ];
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  // 输入防抖取建议（历史 + 书签）
+  // 输入防抖：在线联想 + 本地历史/书签一起取，换词时中止上一次请求
   useEffect(() => {
     const text = value.trim();
     if (!text) {
-      setSuggestions([]);
+      setEngineSuggestions([]);
+      setLocalSuggestions([]);
       return;
     }
-    let cancelled = false;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     const timer = setTimeout(() => {
-      void gatherSuggestions(text).then((items) => {
-        if (!cancelled) setSuggestions(items);
+      void Promise.all([
+        fetchEngineSuggestions(engine, text, { signal: controller.signal }),
+        gatherSuggestions(text),
+      ]).then(([engineItems, localItems]) => {
+        if (controller.signal.aborted) return;
+        setEngineSuggestions(engineItems);
+        // 避免和在线联想重复
+        setLocalSuggestions(localItems.filter((item) => !engineItems.includes(item.title)));
       });
-    }, 120);
+    }, 140);
+
     return () => {
-      cancelled = true;
       clearTimeout(timer);
+      controller.abort();
     };
-  }, [value]);
+  }, [value, engine]);
 
   // 窗口尺寸变化时关闭浮层（坐标会失效）
   useEffect(() => {
@@ -98,6 +117,10 @@ export function Search({ instanceId }: { instanceId: string; props: Record<strin
   };
 
   const openSuggestion = (item: Suggestion) => {
+    if (item.kind === "engine") {
+      submit(item.title);
+      return;
+    }
     window.location.href = item.url;
   };
 
@@ -107,8 +130,8 @@ export function Search({ instanceId }: { instanceId: string; props: Record<strin
     if (e.key === "Enter") {
       e.preventDefault();
       const index = panel?.kind === "suggest" ? panel.index : -1;
-      if (index >= 0 && index < suggestions.length) {
-        openSuggestion(suggestions[index]!);
+      if (index >= 0 && index < rows.length) {
+        openSuggestion(rows[index]!);
         return;
       }
       submit();
@@ -116,13 +139,13 @@ export function Search({ instanceId }: { instanceId: string; props: Record<strin
     }
 
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      if (suggestions.length === 0) return;
+      if (rows.length === 0) return;
       e.preventDefault();
       const delta = e.key === "ArrowDown" ? 1 : -1;
       const current = panel?.kind === "suggest" ? panel.index : -1;
       let next = current + delta;
-      if (next < -1) next = suggestions.length - 1;
-      if (next >= suggestions.length) next = -1;
+      if (next < -1) next = rows.length - 1;
+      if (next >= rows.length) next = -1;
       if (panel?.kind !== "suggest") openPanel("suggest");
       setPanel({ kind: "suggest", index: next });
       return;
@@ -246,11 +269,11 @@ export function Search({ instanceId }: { instanceId: string; props: Record<strin
                       </span>
                     </button>
 
-                    {suggestions.map((item, index) => (
+                    {rows.map((item, index) => (
                       <button
-                        key={`${item.url}-${index}`}
+                        key={`${item.kind}-${item.title}-${index}`}
                         class={`kt-suggest-row ${panel.index === index ? "kt-suggest-active" : ""}`}
-                        title={item.url}
+                        title={item.url || item.title}
                         onPointerDown={(e) => {
                           e.preventDefault();
                           openSuggestion(item);
@@ -258,7 +281,7 @@ export function Search({ instanceId }: { instanceId: string; props: Record<strin
                         data-testid="suggest-item"
                       >
                         <span class="kt-suggest-icon">
-                          {item.kind === "bookmark" ? "★" : "🕘"}
+                          {item.kind === "bookmark" ? "★" : item.kind === "engine" ? "🔍" : "🕘"}
                         </span>
                         <span class="kt-suggest-info">
                           <span class="kt-suggest-title">{item.title}</span>
@@ -267,8 +290,8 @@ export function Search({ instanceId }: { instanceId: string; props: Record<strin
                       </button>
                     ))}
 
-                    {suggestions.length === 0 ? (
-                      <div class="kt-suggest-empty">没有匹配的历史或书签，回车直接搜索</div>
+                    {rows.length === 0 ? (
+                      <div class="kt-suggest-empty">没有建议，回车直接搜索</div>
                     ) : null}
                   </>
                 )}

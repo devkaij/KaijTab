@@ -24,6 +24,8 @@ test.describe("搜索框：下拉与建议", () => {
   });
 
   test("输入时给出历史建议，键盘下移 + 回车可直接进入", async ({ newTab, context }) => {
+    // 本用例只验证本地建议：把在线联想接口打掉，避免依赖外网
+    await context.route(/api\.bing\.com/, (route) => route.fulfill({ status: 500, body: "x" }));
     await context.route(/kaijtab-test\.example\.com/, (route) =>
       route.fulfill({ body: "<h1>ok</h1>", contentType: "text/html" }),
     );
@@ -48,6 +50,7 @@ test.describe("搜索框：下拉与建议", () => {
   });
 
   test("书签也能被搜到并点击进入", async ({ newTab, context }) => {
+    await context.route(/api\.bing\.com/, (route) => route.fulfill({ status: 500, body: "x" }));
     await context.route(/bookmark-hit\.example\.com/, (route) =>
       route.fulfill({ body: "<h1>ok</h1>", contentType: "text/html" }),
     );
@@ -72,12 +75,53 @@ test.describe("搜索框：下拉与建议", () => {
     await newTab.waitForURL(/bookmark-hit\.example\.com/, { timeout: 15_000 });
   });
 
-  test("没有匹配时给提示，回车直接搜索", async ({ newTab }) => {
+  test("在线联想词：来自搜索引擎，点击即用当前引擎搜索", async ({ newTab, context }) => {
+    await context.route(/api\.bing\.com/, (route) =>
+      route.fulfill({
+        contentType: "text/plain",
+        body: '["贴吧",["贴吧","贴吧 百度","贴吧工具箱","贴吧网页版登录入口"]]',
+      }),
+    );
+    await context.route(/bing\.com\/search/, (route) =>
+      route.fulfill({ body: "<h1>search</h1>", contentType: "text/html" }),
+    );
+
+    await newTab.getByTestId("search-input").fill("贴吧");
+    const items = newTab.getByTestId("suggest-item");
+    await expect(items.first()).toBeVisible({ timeout: 10_000 });
+    await expect(newTab.getByTestId("suggest-menu")).toContainText("贴吧 百度");
+    await expect(newTab.getByTestId("suggest-menu")).toContainText("贴吧工具箱");
+
+    // 引擎联想词用放大镜图标
+    await expect(items.first()).toContainText("🔍");
+
+    await items.filter({ hasText: "贴吧工具箱" }).first().click();
+    await newTab.waitForURL(/bing\.com\/search\?q=/, { timeout: 15_000 });
+    expect(decodeURIComponent(newTab.url())).toContain("贴吧工具箱");
+  });
+
+  test("在线联想接口失败时静默降级，本地建议照常", async ({ newTab, context }) => {
+    await context.route(/api\.bing\.com/, (route) => route.fulfill({ status: 500, body: "boom" }));
+    await newTab.evaluate(async () => {
+      await chrome.history.addUrl({ url: "https://kaijtab-local.example.com/page" });
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    });
+
+    await newTab.getByTestId("search-input").fill("kaijtab-local");
+    const items = newTab.getByTestId("suggest-item");
+    await expect(items.first()).toBeVisible({ timeout: 10_000 });
+    await expect(newTab.getByTestId("suggest-menu")).toContainText("kaijtab-local.example.com");
+    // 没有引擎联想词时不应出现放大镜行
+    await expect(items.first()).toContainText("🕘");
+  });
+
+  test("没有匹配时给提示，回车直接搜索", async ({ newTab, context }) => {
+    await context.route(/api\.bing\.com/, (route) => route.fulfill({ status: 500, body: "boom" }));
     await newTab.getByTestId("search-input").fill("zzz-不存在的历史-zzz");
 
     const menu = newTab.getByTestId("suggest-menu");
     await expect(menu).toBeVisible({ timeout: 10_000 });
-    await expect(menu).toContainText("没有匹配的历史或书签");
+    await expect(menu).toContainText("没有建议，回车直接搜索");
 
     // Esc 关闭浮层
     await newTab.keyboard.press("Escape");

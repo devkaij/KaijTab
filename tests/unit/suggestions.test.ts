@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  ENGINE_SUGGEST,
   flattenBookmarks,
+  parseBaiduSuggest,
+  parseJsonSuggest,
+  parseSogouSuggest,
   rankSuggestions,
   scoreSuggestion,
   type SuggestionSource,
@@ -74,6 +78,35 @@ describe("rankSuggestions", () => {
 
   it("空查询返回空", () => {
     expect(rankSuggestions([source({ title: "a", url: "https://a.com" })], "   ", 8, NOW)).toEqual([]);
+  });
+});
+
+describe("搜索引擎联想词解析", () => {
+  it("百度：取 g[].q", () => {
+    const text =
+      '{"q":"贴吧","p":false,"g":[{"type":"sug","sa":"s_1","q":"贴吧 百度"},{"type":"sug","sa":"s_2","q":"贴吧工具箱"},{"type":"sug","q":"  "}]}';
+    expect(parseBaiduSuggest(text)).toEqual(["贴吧 百度", "贴吧工具箱"]);
+    expect(parseBaiduSuggest("不是 json")).toEqual([]);
+  });
+
+  it("Bing / Google：取数组第二项", () => {
+    const text = '["贴吧",["贴吧","贴吧 百度","贴吧工具箱"]]';
+    expect(parseJsonSuggest(text)).toEqual(["贴吧", "贴吧 百度", "贴吧工具箱"]);
+    expect(parseJsonSuggest('{"hmm":1}')).toEqual([]);
+    expect(parseJsonSuggest("")).toEqual([]);
+  });
+
+  it("搜狗：剥掉 JSONP 外壳", () => {
+    const text = 'window.sogou.sug(["贴吧",["贴吧","百度贴吧"],["0;15;0;0"],[""]]);';
+    expect(parseSogouSuggest(text)).toEqual(["贴吧", "百度贴吧"]);
+    expect(parseSogouSuggest("乱七八糟")).toEqual([]);
+  });
+
+  it("三家都有可用的 URL 构造", () => {
+    for (const source of Object.values(ENGINE_SUGGEST)) {
+      expect(source.buildUrl("贴吧 测试")).toContain(encodeURIComponent("贴吧 测试"));
+      expect(source.parse("")).toEqual([]);
+    }
   });
 });
 
