@@ -40,18 +40,20 @@
   color: var(--kt-fg);
 }
 
-.kt-search-engine-backdrop {
+/* 浮层：从 document.body 渲染，避免被元件容器的 overflow:hidden 裁切 */
+.kt-popover-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 10040;
+  z-index: 10050;
 }
 
-.kt-search-engine-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 10041;
-  min-width: 120px;
+.kt-popover {
+  position: fixed;
+  z-index: 10051;
+  min-width: 220px;
+  max-width: 620px;
+  max-height: 340px;
+  overflow: auto;
   padding: 6px;
   display: flex;
   flex-direction: column;
@@ -60,9 +62,71 @@
   border: 1px solid var(--kt-border);
   border-radius: var(--kt-radius-sm);
   box-shadow: var(--kt-shadow);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--kt-scrollbar) transparent;
 }
 
+/* ---------- 搜索建议 ---------- */
+
+.kt-suggest-row {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 1.2cqw, 12px);
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--kt-fg);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.kt-suggest-row:hover,
+.kt-suggest-active {
+  background: var(--kt-hover);
+}
+
+.kt-suggest-icon {
+  flex: none;
+  width: 18px;
+  display: grid;
+  place-content: center;
+  color: var(--kt-muted);
+  font-size: 12px;
+}
+
+.kt-suggest-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.kt-suggest-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-suggest-sub {
+  font-size: 11px;
+  color: var(--kt-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-suggest-empty {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--kt-muted);
+}
 .kt-menu-item-active {
   color: var(--kt-accent);
 }

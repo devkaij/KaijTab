@@ -1,6 +1,6 @@
 {
   "name": "kaijtab",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "private": true,
   "type": "module",
   "description": "自由画布式新标签页：本地动态壁纸、模块按需加载、零服务端。",
