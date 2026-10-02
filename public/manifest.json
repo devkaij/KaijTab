@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "KaijTab",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "description": "自由画布式新标签页：本地动态壁纸、模块按需加载、零服务端。",
   "minimum_chrome_version": "110",
   "icons": {

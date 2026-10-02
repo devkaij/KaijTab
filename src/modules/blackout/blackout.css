@@ -1,0 +1,79 @@
+.kt-blackout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(5px, 2cqh, 14px);
+  height: 100%;
+  padding: clamp(8px, 3cqw, 20px);
+  text-align: center;
+  color: var(--kt-fg);
+  background: var(--kt-card-bg);
+  border: var(--kt-card-border);
+  border-radius: var(--kt-radius);
+  backdrop-filter: var(--kt-card-blur);
+  -webkit-backdrop-filter: var(--kt-card-blur);
+  box-shadow: var(--kt-card-shadow);
+}
+
+.kt-blackout-icon {
+  font-size: clamp(20px, min(9cqw, 22cqh), 56px);
+  line-height: 1;
+}
+
+.kt-blackout-tip {
+  font-size: clamp(10px, min(2.6cqw, 6cqh), 15px);
+  line-height: 1.55;
+  color: var(--kt-muted);
+}
+
+.kt-blackout-btn {
+  appearance: none;
+  border: 1px solid var(--kt-border-strong);
+  background: var(--kt-input-bg);
+  color: var(--kt-fg);
+  font-family: inherit;
+  font-size: clamp(11px, min(2.8cqw, 7cqh), 16px);
+  padding: clamp(6px, 1.6cqh, 12px) clamp(14px, 3cqw, 26px);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.kt-blackout-btn:hover {
+  background: var(--kt-hover-strong);
+}
+
+/* ---------- 全屏黑屏层（挂 body，覆盖一切） ---------- */
+
+.kt-blackout-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  /* 纯黑：OLED 上黑像素几乎不发光，等价于"最低亮度" */
+  background: #000;
+  display: grid;
+  place-items: center;
+  cursor: none;
+  outline: none;
+}
+
+.kt-blackout-hint {
+  position: fixed;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.34);
+  transition: opacity 600ms ease;
+  pointer-events: none;
+}
+
+.kt-blackout-clock {
+  position: fixed;
+  right: max(24px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  font-size: clamp(18px, 2.6vw, 30px);
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
