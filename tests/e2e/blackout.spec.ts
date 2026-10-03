@@ -15,10 +15,13 @@ async function addBlackout(page: Page): Promise<void> {
 test.describe("熄屏模式", () => {
   test("一键进入全屏纯黑，点击任意处退出", async ({ newTab }) => {
     await addBlackout(newTab);
-    await newTab.getByTestId("blackout-enter").click();
-
     const layer = newTab.getByTestId("blackout-layer");
-    await expect(layer).toBeVisible();
+
+    // 平时常驻但不可见、不拦截点击
+    await expect(layer).toHaveAttribute("data-active", "false");
+
+    await newTab.getByTestId("blackout-enter").click();
+    await expect(layer).toHaveAttribute("data-active", "true");
 
     // 纯黑（#000）
     const background = await layer.evaluate((el) => getComputedStyle(el).backgroundColor);
@@ -30,25 +33,32 @@ test.describe("熄屏模式", () => {
     expect(box.width).toBeGreaterThanOrEqual(viewport.width - 1);
     expect(box.height).toBeGreaterThanOrEqual(viewport.height - 1);
 
-    // 尝试真正的全屏（自动化/无手势时可能被拒，此时覆盖层兜底）
-    const fullscreenAttr = await layer.getAttribute("data-fullscreen");
-    expect(["true", "false"]).toContain(fullscreenAttr);
+    // 真的进入全屏了吗（点击手势内发起的 requestFullscreen）
+    const state = await newTab.evaluate(() => ({
+      fullscreen: Boolean(document.fullscreenElement),
+      fullscreenElementClass: document.fullscreenElement?.className ?? null,
+    }));
+    expect(state.fullscreenElementClass).toContain("kt-blackout-layer");
+
     // 提示会在几秒后淡出（之后只剩纯黑）
     await expect(newTab.getByTestId("blackout-hint")).toHaveCount(1);
 
     await layer.click();
-    await expect(newTab.getByTestId("blackout-layer")).toHaveCount(0);
+    await expect(layer).toHaveAttribute("data-active", "false");
     // 退出时应同时退出全屏
-    expect(await newTab.evaluate(() => Boolean(document.fullscreenElement))).toBe(false);
+    await expect
+      .poll(() => newTab.evaluate(() => Boolean(document.fullscreenElement)))
+      .toBe(false);
   });
 
   test("Esc 也能退出", async ({ newTab }) => {
     await addBlackout(newTab);
+    const layer = newTab.getByTestId("blackout-layer");
     await newTab.getByTestId("blackout-enter").click();
-    await expect(newTab.getByTestId("blackout-layer")).toBeVisible();
+    await expect(layer).toHaveAttribute("data-active", "true");
 
     await newTab.keyboard.press("Escape");
-    await expect(newTab.getByTestId("blackout-layer")).toHaveCount(0);
+    await expect(layer).toHaveAttribute("data-active", "false");
   });
 
   test("可配置：显示极暗时钟", async ({ newTab }) => {

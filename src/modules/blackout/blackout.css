@@ -55,6 +55,15 @@
   place-items: center;
   cursor: none;
   outline: none;
+  /* 常驻渲染但默认不可见/不拦截点击（这样点击时能立刻请求全屏） */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.kt-blackout-layer[data-active="true"] {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .kt-blackout-hint {

@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 0.6.5 — 2026-10-03
+
+修复熄屏模式**没有真正进入全屏**的问题：
+
+- **根因**：黑屏层原来只在 `active === true` 时才渲染，而点击处理器里先 `setActive(true)` 再去取 `layerRef.current` —— 那一刻 DOM 还没更新，ref 是 `null`，`requestFullscreen()` 从未被调用（之前以为是浏览器拦截，其实是这个 bug）
+- **修法**：黑屏层**常驻渲染**（平时 `opacity: 0` + `pointer-events: none`），点击时 ref 必然存在，全屏请求就在用户手势的同一个任务里发起；同时用 `{ navigationUI: "hide" }` 并先判断 `document.fullscreenEnabled`
+- 全屏失败时仍走覆盖层兜底，提示会写"浏览器未进入全屏，可按 F11"
+- 测试加强：E2E 现在**断言真的全屏**——`document.fullscreenElement` 的 className 必须包含 `kt-blackout-layer`（之前只敢断言"是个布尔值"）；退出时断言全屏状态复位
+- 文档同步：`docs/screenshots/22-blackout.png` 重新生成
+
 ## 0.6.4 — 2026-10-03
 
 新增模块「**熄屏模式**」（第 14 个模块）：

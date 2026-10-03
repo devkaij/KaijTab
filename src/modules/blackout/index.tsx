@@ -43,13 +43,19 @@ export default function Blackout({ props }: ModuleProps) {
   };
 
   const enter = async () => {
+    // 先用覆盖层立刻变黑（即使全屏被拒也有效）
     setActive(true);
     setHintVisible(true);
-    // 全屏可能被浏览器拒绝（例如没有用户手势）：失败也仍然铺满黑屏
-    try {
-      await layerRef.current?.requestFullscreen?.();
-    } catch {
-      // 忽略
+
+    // 关键：黑屏层是常驻渲染的，这里 ref 一定拿得到；
+    // 请求必须在点击手势的同一个任务里发起，否则浏览器会拒绝。
+    const layer = layerRef.current;
+    if (layer && document.fullscreenEnabled && !document.fullscreenElement) {
+      try {
+        await layer.requestFullscreen({ navigationUI: "hide" });
+      } catch {
+        // 浏览器拒绝（例如页面失焦）：黑屏层兜底，提示里会给出 F11
+      }
     }
     setFullscreen(Boolean(document.fullscreenElement));
     if (keepAwake) requestWakeLock();
@@ -123,30 +129,30 @@ export default function Blackout({ props }: ModuleProps) {
         进入全屏黑屏
       </button>
 
-      {active
-        ? createPortal(
-            <div
-              class="kt-blackout-layer"
-              ref={layerRef}
-              tabIndex={0}
-              data-fullscreen={fullscreen ? "true" : "false"}
-              onPointerDown={exit}
-              data-testid="blackout-layer"
-            >
-              {hintVisible ? (
-                <div class="kt-blackout-hint" data-testid="blackout-hint">
-                  {fullscreen ? "点击任意处或按 Esc 退出" : "浏览器未进入全屏，可按 F11 · 点击任意处或按 Esc 退出"}
-                </div>
-              ) : null}
-              {showClock ? (
-                <div class="kt-blackout-clock" data-testid="blackout-clock">
-                  {formatClock(now)}
-                </div>
-              ) : null}
-            </div>,
-            document.body,
-          )
-        : null}
+      {/* 常驻渲染：这样点击时 ref 一定存在，全屏请求才能在手势内发起 */}
+      {createPortal(
+        <div
+          class="kt-blackout-layer"
+          ref={layerRef}
+          tabIndex={0}
+          data-active={active ? "true" : "false"}
+          data-fullscreen={fullscreen ? "true" : "false"}
+          onPointerDown={active ? exit : undefined}
+          data-testid="blackout-layer"
+        >
+          {active && hintVisible ? (
+            <div class="kt-blackout-hint" data-testid="blackout-hint">
+              {fullscreen ? "点击任意处或按 Esc 退出" : "浏览器未进入全屏，可按 F11 · 点击任意处或按 Esc 退出"}
+            </div>
+          ) : null}
+          {active && showClock ? (
+            <div class="kt-blackout-clock" data-testid="blackout-clock">
+              {formatClock(now)}
+            </div>
+          ) : null}
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }
