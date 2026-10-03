@@ -11,7 +11,11 @@ test.describe("核心底座", () => {
     expect((state.settings as { searchEngine: string }).searchEngine).toBe("baidu");
   });
 
-  test("搜索回车跳转到对应引擎", async ({ newTab }) => {
+  test("搜索回车跳转到对应引擎", async ({ newTab, context }) => {
+    // 把搜索引擎页 mock 掉：整套 E2E 不依赖外网
+    await context.route(/bing\.com\/search/, (route) =>
+      route.fulfill({ body: "<h1>bing</h1>", contentType: "text/html" }),
+    );
     await newTab.getByTestId("search-input").fill("kaijtab 测试");
     await newTab.getByTestId("search-input").press("Enter");
     await newTab.waitForURL(/bing\.com\/search/, { timeout: 15_000 });
