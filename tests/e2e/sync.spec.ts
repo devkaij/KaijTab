@@ -8,7 +8,7 @@ test.describe("浏览器账号同步", () => {
     await newTab.getByTestId("sync-toggle").click();
     await expect(newTab.getByTestId("sync-toggle")).toContainText("同步已开启");
 
-    await newTab.waitForTimeout(1200);
+    await newTab.waitForTimeout(2500);
     const syncData = await newTab.evaluate(() => chrome.storage.sync.get(null));
     expect(syncData["sync:meta"]).toBeTruthy();
     expect(typeof syncData["sync:chunk:0"]).toBe("string");
@@ -34,7 +34,7 @@ test.describe("浏览器账号同步", () => {
       60,
       0,
     );
-    await newTab.waitForTimeout(1400);
+    await newTab.waitForTimeout(2500);
     const chunkAfter = String(
       (await newTab.evaluate(() => chrome.storage.sync.get("sync:chunk:0")))["sync:chunk:0"],
     );
@@ -43,7 +43,7 @@ test.describe("浏览器账号同步", () => {
     // 关闭并清理
     await newTab.getByTestId("open-settings").click();
     await newTab.getByTestId("sync-toggle").click();
-    await newTab.waitForTimeout(600);
+    await newTab.waitForTimeout(1200);
     const afterDisable = await newTab.evaluate(() => chrome.storage.sync.get(null));
     expect(Object.keys(afterDisable).some((k) => k.startsWith("sync:"))).toBe(false);
   });
