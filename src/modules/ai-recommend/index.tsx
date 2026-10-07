@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import type { ModuleProps, ModuleRuntime } from "@/newtab/module-host/types";
 import { IconProbe } from "@/shared/ui/IconProbe";
+import { AiConfigForm } from "@/newtab/core/ai/AiConfigForm";
+import { isThinkingFallback, readAiConfig } from "@/newtab/core/ai/config";
+import { state } from "@/newtab/store";
 import {
   buildBrowsingContext,
-  buildChatPayload,
-  chatCompletionsUrl,
+  buildUserPrompt,
   formatRelative,
   HISTORY_LOOKBACK_MS,
-  normalizeBaseUrl,
   parseRecommendations,
-  permissionOrigin,
+  SYSTEM_PROMPT,
   type BrowsingContext,
   type Recommendation,
 } from "./logic";
@@ -18,25 +19,6 @@ import "./ai-recommend.css";
 interface Cache {
   at: number;
   items: Recommendation[];
-}
-
-interface FullConfig {
-  baseUrl: string;
-  model: string;
-  apiKey: string;
-}
-
-const DEFAULT_BASE = "https://api.openai.com/v1";
-const DEFAULT_MODEL = "gpt-4o-mini";
-const REQUEST_TIMEOUT_MS = 45_000;
-
-function readConfig(runtime: ModuleRuntime): FullConfig {
-  const settings = runtime.settings.get<{ baseUrl?: string; model?: string }>();
-  return {
-    baseUrl: settings.baseUrl ?? DEFAULT_BASE,
-    model: settings.model ?? DEFAULT_MODEL,
-    apiKey: runtime.secrets.get<string>("apiKey") ?? "",
-  };
 }
 
 function flattenBookmarks(
@@ -91,9 +73,6 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
   const runtimeRef = useRef(runtime);
   runtimeRef.current = runtime;
 
-  const [config, setConfig] = useState<FullConfig>(() => readConfig(runtime));
-  const [draft, setDraft] = useState<FullConfig>(() => readConfig(runtime));
-  const [editing, setEditing] = useState(() => !readConfig(runtime).apiKey);
   const [items, setItems] = useState<Recommendation[]>(
     () => runtime.data.get<Cache>("cache")?.items ?? [],
   );
@@ -104,17 +83,20 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [configVersion, setConfigVersion] = useState(0);
+  const [editingSettings, setEditingSettings] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   const count =
     typeof props.count === "number" && props.count > 0 ? Math.min(8, props.count) : 5;
-  const configured = Boolean(config.apiKey && config.baseUrl && config.model);
+  const config = readAiConfig(state.value);
+  const configured = runtimeRef.current.ai.configured();
+  void configVersion;
 
   const refresh = useCallback(
     async (force: boolean) => {
       void force; // 现在每次打开新标签页都重新生成，force 仅用于语义表达
-      const current = readConfig(runtimeRef.current);
-      if (!current.apiKey) return;
+      if (!runtimeRef.current.ai.configured()) return;
 
       // 中止上一次未完成的请求（避免切换/关闭后还有悬挂请求）
       abortRef.current?.abort();
@@ -123,47 +105,16 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
 
       setStatus("loading");
       setError(null);
-      let timedOut = false;
-      const timer = setTimeout(() => {
-        timedOut = true;
-        controller.abort();
-      }, REQUEST_TIMEOUT_MS);
       try {
         const context = await gatherContext(runtimeRef.current);
-        const url = chatCompletionsUrl(current.baseUrl);
-        const headers = {
-          "content-type": "application/json",
-          authorization: `Bearer ${current.apiKey}`,
-        };
-        const settings = runtimeRef.current.settings.get<{ thinkingFallback?: boolean }>();
-        const lowThinking = settings.thinkingFallback !== true;
+        const content = await runtimeRef.current.ai.chat(
+          [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: buildUserPrompt(context, count) },
+          ],
+          { maxTokens: 600, temperature: 0.5, signal: controller.signal },
+        );
 
-        const send = (thinking: boolean) =>
-          fetch(url, {
-            method: "POST",
-            headers,
-            body: JSON.stringify(
-              buildChatPayload(context, count, current.model, { lowThinking: thinking }),
-            ),
-            signal: controller.signal,
-          });
-
-        let response = await send(lowThinking);
-        if (!response.ok && lowThinking && response.status === 400) {
-          // 该接口不认识"思考控制"字段：去掉后重试一次，并记住这个结论
-          runtimeRef.current.settings.set({ thinkingFallback: true });
-          response = await send(false);
-        }
-
-        if (!response.ok) {
-          const hint =
-            response.status === 401 || response.status === 403 ? "（API Key 或权限可能不对）" : "";
-          throw new Error(`接口返回 HTTP ${response.status}${hint}`);
-        }
-        const data = (await response.json()) as {
-          choices?: Array<{ message?: { content?: string } }>;
-        };
-        const content = data.choices?.[0]?.message?.content ?? "";
         const parsed = parseRecommendations(content);
         if (parsed.length === 0) throw new Error("模型没有返回可用的推荐，换个模型或稍后重试");
 
@@ -176,12 +127,10 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
         setCachedAt(next.at);
         setStatus("idle");
       } catch (err) {
-        if (controller.signal.aborted && !timedOut) return;
+        if (controller.signal.aborted) return;
         const message = String((err as Error).message ?? err);
-        setError(timedOut || message.includes("abort") ? "请求超时" : message);
+        setError(message);
         setStatus("error");
-      } finally {
-        clearTimeout(timer);
       }
     },
     [count],
@@ -198,38 +147,6 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
     return () => clearInterval(ticker);
   }, []);
 
-  const saveConfig = async () => {
-    const baseUrl = normalizeBaseUrl(draft.baseUrl);
-    const model = draft.model.trim();
-    const apiKey = draft.apiKey.trim();
-    if (!baseUrl || !model || !apiKey) {
-      setError("接口地址、模型名、API Key 三项都要填");
-      return;
-    }
-    const origin = permissionOrigin(baseUrl);
-    if (!origin) {
-      setError("接口地址不合法（示例：https://api.openai.com/v1）");
-      return;
-    }
-    try {
-      const granted = await chrome.permissions.request({ origins: [origin] });
-      if (!granted) {
-        setError(`没有获得 ${origin} 的访问权限，无法调用你的接口`);
-        return;
-      }
-    } catch (err) {
-      setError(`申请权限失败：${String((err as Error).message ?? err)}`);
-      return;
-    }
-
-    runtimeRef.current.settings.set({ baseUrl, model });
-    runtimeRef.current.secrets.set("apiKey", apiKey);
-    setConfig({ baseUrl, model, apiKey });
-    setEditing(false);
-    setError(null);
-    void refresh(true);
-  };
-
   const showPreview = async () => {
     try {
       const context = await gatherContext(runtimeRef.current);
@@ -239,71 +156,34 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
     }
   };
 
-  if (editing || !configured) {
+  if (!configured || editingSettings) {
     return (
       <div class="kt-ai" data-testid="ai-recommend-setup">
         <div class="kt-ai-head">
           <span class="kt-ai-title">AI 推荐 · 接入你的接口</span>
         </div>
-        <label class="kt-ai-field">
-          <span>接口地址（OpenAI 兼容）</span>
-          <input
-            type="text"
-            value={draft.baseUrl}
-            placeholder={DEFAULT_BASE}
-            spellcheck={false}
-            data-testid="ai-base-url"
-            onInput={(e) =>
-              setDraft({ ...draft, baseUrl: (e.target as HTMLInputElement).value })
-            }
-          />
-        </label>
-        <label class="kt-ai-field">
-          <span>模型名</span>
-          <input
-            type="text"
-            value={draft.model}
-            placeholder={DEFAULT_MODEL}
-            spellcheck={false}
-            data-testid="ai-model"
-            onInput={(e) => setDraft({ ...draft, model: (e.target as HTMLInputElement).value })}
-          />
-        </label>
-        <label class="kt-ai-field">
-          <span>API Key（只存在本地，不参与账号同步）</span>
-          <input
-            type="password"
-            value={draft.apiKey}
-            placeholder="sk-…"
-            spellcheck={false}
-            data-testid="ai-api-key"
-            onInput={(e) => setDraft({ ...draft, apiKey: (e.target as HTMLInputElement).value })}
-          />
-        </label>
-        <div class="kt-ai-actions">
-          <button class="kt-ai-btn kt-ai-btn-primary" onClick={() => void saveConfig()} data-testid="ai-save">
-            保存并授权
-          </button>
+        <AiConfigForm
+          onSaved={() => {
+            setEditingSettings(false);
+            setConfigVersion((v) => v + 1);
+            void refresh(true);
+          }}
+          hint="每次打开新标签页都会重新生成；发送前已在本地聚合脱敏（只保留域名统计与少量标题，查询串全部剥离），默认请求低思考档位以加快输出（接口不支持时自动降级）。配置为全应用共享（热榜翻译也用这一份）。"
+        >
           <button class="kt-ai-btn" onClick={() => void showPreview()} data-testid="ai-preview">
             预览将发送的数据
           </button>
           {configured ? (
-            <button class="kt-ai-btn" onClick={() => setEditing(false)}>
+            <button class="kt-ai-btn" onClick={() => setEditingSettings(false)}>
               取消
             </button>
           ) : null}
-        </div>
-        <p class="kt-ai-note">
-          每次打开新标签页都会重新生成；发送前已在本地聚合脱敏（只保留域名统计与少量标题，
-          查询串全部剥离），默认请求低思考档位以加快输出（接口不支持时自动降级）。
-          数据只发往你填写的接口，保存时浏览器会弹出一次该域名的访问授权。
-        </p>
+        </AiConfigForm>
         {preview ? (
           <pre class="kt-ai-preview" data-testid="ai-preview-json">
             {preview}
           </pre>
         ) : null}
-        {error ? <p class="kt-ai-error">{error}</p> : null}
       </div>
     );
   }
@@ -318,9 +198,7 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
             : cachedAt
               ? `${formatRelative(cachedAt, now)} · ${config.model}`
               : config.model}
-          {runtime.settings.get<{ thinkingFallback?: boolean }>().thinkingFallback
-            ? " · 已降级"
-            : ""}
+          {isThinkingFallback(state.value) ? " · 已降级" : ""}
         </span>
         <button
           class="kt-ai-icon-btn"
@@ -333,10 +211,7 @@ export default function AiRecommend({ props, runtime }: ModuleProps) {
         <button
           class="kt-ai-icon-btn"
           title="接口设置"
-          onClick={() => {
-            setDraft(readConfig(runtimeRef.current));
-            setEditing(true);
-          }}
+          onClick={() => setEditingSettings(true)}
           data-testid="ai-settings"
         >
           ⚙

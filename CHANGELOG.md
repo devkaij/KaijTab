@@ -1,5 +1,28 @@
 # CHANGELOG
 
+## 0.7.0 — 2026-10-07
+
+今日热榜：**新增 5 个国外榜单 + 一键译中**（翻译走你自己配置的 AI 接口，不引入任何第三方翻译服务）。
+
+- **新增国外数据源**（均免鉴权、实测可用；Reddit 实测 403 被墙，未采用）：
+  - **Hacker News**（`hn.algolia.com` 首页热帖，一条请求拿全字段，带 ▲ 点数）
+  - **Lobsters**（`lobste.rs/hottest.json`，▲ 分数）
+  - **dev.to**（`dev.to/api/articles?top=1`，♥ 点赞数）
+  - **谷歌热搜 · 美区**（`trends.google.com/trending/rss?geo=US`，带搜索量；该 RSS 的 `<link>` 指向 feed 自己，所以统一拼趋势页链接）
+  - **Techmeme**（`techmeme.com/feed.xml` 科技头条）
+  - 解析器对**真实响应**做过验证（HN 偶发 URL 结尾带反斜杠，已统一清洗）
+- **译中**：国外源右上角多一个「译」按钮，开启后**中文在上、英文原文在下**（方便对照）；译文缓存在本地（同一标题不重复请求），开关按实例记住
+  - **翻译接口 = 你自己配置的 OpenAI 兼容接口**：只把当前榜单的标题文本发过去，翻完缓存在本地；未配置时点「译」直接弹出接入表单（保存后自动开始翻译）
+  - 批量翻译一次一批（≤20 条）并把结果对齐回原文（模型返回代码围栏、1 基编号对象、多余说明都能解析）
+  - 设置层用 `createPortal` 挂到 `document.body`，不会被元件容器的 `overflow:hidden` 裁切
+- **AI 配置提升为全应用共享**（重构，为翻译让路）：
+  - 配置位置从 `modules.settings["ai-recommend"]` 迁到 `settings.ai` + `localSecrets["ai:apiKey"]`；**旧位置仍可读**（老用户无需重新配置），AI 推荐模块的既有 E2E 仍走旧命名空间，正好覆盖兼容路径
+  - 抽出 `AiConfigForm`（同一份表单，字段 testid 未变）、`core/ai/client.ts`（统一处理端点拼接、低思考档位字段与 400 自动降级、超时/中止）、`core/ai/config.ts`（纯配置读取）
+  - 模块侧新增 `runtime.ai.configured()` / `runtime.ai.chat()`：模块不再各自实现请求逻辑
+  - XML 提取工具抽到 `shared/utils/feeds.ts`（RSS 模块与热榜共用）
+- 截图：`docs/screenshots/23-hot-list-translate.png`（英文榜译中）、`24-hot-list-translate-setup.png`（未配置时的接入层）；可用 `node scripts/screenshot-hot-translate.mjs` 离线复现（HN 榜单与翻译接口都是假响应）
+- 测试：187 单测 + 69 E2E（新增 10 条单测：5 个国外源解析 + 翻译缓存键/批处理/响应解析/裁剪；2 条 E2E：HN 榜渲染并译中且落盘、未配置时弹出设置层且不被裁切）
+
 ## 0.6.5 — 2026-10-03
 
 修复熄屏模式**没有真正进入全屏**的问题：

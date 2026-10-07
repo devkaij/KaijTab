@@ -1,23 +1,25 @@
 import { describe, expect, it } from "vitest";
 import {
   buildBrowsingContext,
-  buildChatPayload,
   buildUserPrompt,
-  chatCompletionsUrl,
   domainOf,
   formatRelative,
   formatWeekday,
   isCacheFresh,
-  MAX_OUTPUT_TOKENS,
   MAX_TOP_SITES,
-  normalizeBaseUrl,
   parseRecommendations,
   partOfDay,
-  permissionOrigin,
   sanitizeUrl,
   SYSTEM_PROMPT,
   truncate,
 } from "@/modules/ai-recommend/logic";
+import {
+  chatCompletionsUrl,
+  DEFAULT_MAX_OUTPUT_TOKENS,
+  normalizeBaseUrl,
+  THINKING_OFF_FIELDS,
+} from "@/newtab/core/ai/config";
+import { permissionOriginFor } from "@/shared/utils/permissions";
 
 describe("URL 脱敏", () => {
   it("去掉查询串与锚点，保留路径", () => {
@@ -142,36 +144,22 @@ describe("请求构造", () => {
   });
 
   it("权限 origin 与非法地址", () => {
-    expect(permissionOrigin("https://api.openai.com/v1")).toBe("https://api.openai.com/*");
-    expect(permissionOrigin("http://127.0.0.1:11434/v1")).toBe("http://127.0.0.1:11434/*");
-    expect(permissionOrigin("nope")).toBeNull();
+    expect(permissionOriginFor("https://api.openai.com/v1")).toBe("https://api.openai.com/*");
+    expect(permissionOriginFor("http://127.0.0.1:11434/v1")).toBe("http://127.0.0.1:11434/*");
+    expect(permissionOriginFor("nope")).toBeNull();
   });
 
-  it("payload 包含模型、系统提示、输出上限与用户数据", () => {
-    const payload = buildChatPayload(context, 5, "gpt-4o-mini") as {
-      model: string;
-      max_tokens: number;
-      messages: Array<{ role: string; content: string }>;
-      reasoning_effort?: string;
-    };
-    expect(payload.model).toBe("gpt-4o-mini");
-    expect(payload.max_tokens).toBe(MAX_OUTPUT_TOKENS);
-    expect(payload.messages[0]?.role).toBe("system");
-    expect(payload.messages[1]?.content).toContain("请推荐 5 个链接");
-    expect(payload.messages[1]?.content).toContain("example.com");
+  it("输出上限与用户提示词", () => {
+    expect(DEFAULT_MAX_OUTPUT_TOKENS).toBe(600);
+    expect(buildUserPrompt(context, 5)).toContain("请推荐 5 个链接");
+    expect(buildUserPrompt(context, 5)).toContain("example.com");
     expect(buildUserPrompt(context, 3)).toContain("请推荐 3 个链接");
   });
 
-  it("低思考档位：附带思考控制字段，关闭时一个都不带", () => {
-    const low = buildChatPayload(context, 5, "m", { lowThinking: true }) as Record<string, unknown>;
-    expect(low.reasoning_effort).toBe("low");
-    expect(low.enable_thinking).toBe(false);
-    expect(low.thinking).toEqual({ type: "disabled" });
-
-    const plain = buildChatPayload(context, 5, "m") as Record<string, unknown>;
-    expect(plain.reasoning_effort).toBeUndefined();
-    expect(plain.enable_thinking).toBeUndefined();
-    expect(plain.thinking).toBeUndefined();
+  it("低思考档位字段：齐全且可一次性发给各家接口", () => {
+    expect(THINKING_OFF_FIELDS.reasoning_effort).toBe("low");
+    expect(THINKING_OFF_FIELDS.enable_thinking).toBe(false);
+    expect(THINKING_OFF_FIELDS.thinking).toEqual({ type: "disabled" });
   });
 
   it("系统提示要求快速输出与简短理由", () => {

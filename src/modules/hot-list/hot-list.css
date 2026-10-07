@@ -57,6 +57,37 @@
   color: var(--kt-fg);
 }
 
+.kt-hot-translate {
+  appearance: none;
+  flex: none;
+  height: clamp(20px, 4.6cqh, 30px);
+  min-width: clamp(20px, 4.6cqh, 30px);
+  padding: 0 clamp(4px, 1cqw, 8px);
+  display: grid;
+  place-content: center;
+  border: 1px solid var(--kt-border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--kt-muted);
+  font-family: inherit;
+  font-size: clamp(10px, 1.8cqw, 13px);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.kt-hot-translate:hover {
+  background: var(--kt-hover);
+  color: var(--kt-fg);
+}
+
+.kt-hot-translate-on,
+.kt-hot-translate-on:hover {
+  background: var(--kt-accent);
+  border-color: var(--kt-accent);
+  color: var(--kt-accent-fg);
+  filter: brightness(1.05);
+}
+
 .kt-hot-list {
   flex: 1;
   min-height: 0;
@@ -96,10 +127,26 @@
   font-weight: 700;
 }
 
-.kt-hot-title {
+.kt-hot-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.kt-hot-title {
+  min-width: 0;
   font-size: clamp(11px, 1.95cqw, 15px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kt-hot-orig {
+  min-width: 0;
+  font-size: clamp(9px, 1.5cqw, 12px);
+  color: var(--kt-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -152,4 +199,61 @@
   padding: 2px 8px;
   border-radius: 6px;
   cursor: pointer;
+}
+
+/* 翻译设置弹窗：挂在 document.body 上，避免被元件容器的 overflow:hidden 裁切 */
+.kt-hot-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.kt-hot-modal-card {
+  width: min(460px, 100%);
+  max-height: min(86vh, 640px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: var(--kt-card-border);
+  border-radius: 14px;
+  background: var(--kt-card-bg);
+  color: var(--kt-fg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  scrollbar-width: thin;
+  scrollbar-color: var(--kt-scrollbar) transparent;
+}
+
+.kt-hot-modal-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.kt-hot-modal-close {
+  margin-left: auto;
+  appearance: none;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 6px;
+  background: transparent;
+  color: var(--kt-muted);
+  font-size: 18px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.kt-hot-modal-close:hover {
+  background: var(--kt-hover);
+  color: var(--kt-fg);
 }

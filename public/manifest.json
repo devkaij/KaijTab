@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "KaijTab",
-  "version": "0.6.5",
+  "version": "0.7.0",
   "description": "自由画布式新标签页：本地动态壁纸、模块按需加载、零服务端。",
   "minimum_chrome_version": "110",
   "icons": {
@@ -31,6 +31,11 @@
     "https://app.bilibili.com/*",
     "https://api.juejin.cn/*",
     "https://api.github.com/*",
+    "https://hn.algolia.com/*",
+    "https://lobste.rs/*",
+    "https://dev.to/*",
+    "https://trends.google.com/*",
+    "https://www.techmeme.com/*",
     "https://de1.api.radio-browser.info/*",
     "https://all.api.radio-browser.info/*",
     "https://www.baidu.com/*",

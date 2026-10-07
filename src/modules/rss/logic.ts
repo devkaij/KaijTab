@@ -1,4 +1,7 @@
 /** RSS / Atom 订阅纯逻辑：订阅地址解析、XML 提取、条目归一化。 */
+import { cleanText, decodeEntities, extractTag, rawBlock } from "@/shared/utils/feeds";
+
+export { cleanText, decodeEntities, extractTag, rawBlock };
 
 export interface FeedItem {
   title: string;
@@ -33,47 +36,6 @@ export function parseFeedList(text: unknown): string[] {
       }
     });
   return [...new Set(urls)].slice(0, MAX_FEEDS);
-}
-
-const ENTITIES: Record<string, string> = {
-  amp: "&",
-  lt: "<",
-  gt: ">",
-  quot: '"',
-  apos: "'",
-  nbsp: " ",
-};
-
-export function decodeEntities(text: string): string {
-  return text.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (match, entity: string) => {
-    if (entity.startsWith("#")) {
-      const isHex = entity[1]?.toLowerCase() === "x";
-      const code = Number.parseInt(entity.slice(isHex ? 2 : 1), isHex ? 16 : 10);
-      return Number.isFinite(code) ? String.fromCodePoint(code) : match;
-    }
-    return ENTITIES[entity.toLowerCase()] ?? match;
-  });
-}
-
-/** 去 CDATA、解实体、压平空白 */
-export function cleanText(raw: string): string {
-  return decodeEntities(raw.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1"))
-    .replace(/<[^>]+>/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/** 取原始块（不去标签），用于嵌套提取 */
-export function rawBlock(xml: string, tag: string): string | null {
-  const pattern = new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)</${tag}>`, "i");
-  const match = pattern.exec(xml);
-  return match?.[1] ?? null;
-}
-
-/** 取第一个匹配的标签内容（容错：标签可能带属性、大小写不一） */
-export function extractTag(xml: string, tag: string): string | null {
-  const raw = rawBlock(xml, tag);
-  return raw != null ? cleanText(raw) : null;
 }
 
 /** Atom 的 link 是自闭合标签，取 rel="alternate" 或第一个 href */

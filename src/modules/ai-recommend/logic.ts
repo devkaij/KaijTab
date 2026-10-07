@@ -20,11 +20,6 @@ export interface Recommendation {
   reason: string;
 }
 
-export interface AiConfig {
-  baseUrl: string;
-  model: string;
-}
-
 export const MAX_TOP_SITES = 24;
 export const MAX_BOOKMARKS = 30;
 export const MAX_SHORTCUTS = 20;
@@ -169,60 +164,8 @@ export function buildUserPrompt(context: BrowsingContext, count: number): string
   ].join("\n");
 }
 
-/** 输出上限：8 条短推荐足够，限制长度能显著缩短推理模型的思考时间 */
-export const MAX_OUTPUT_TOKENS = 600;
-
-/** 低思考档位需要发出去的字段（各家叫法不同，多写几个；不支持的接口会忽略或 400） */
-export const THINKING_OFF_FIELDS: Record<string, unknown> = {
-  reasoning_effort: "low",
-  enable_thinking: false,
-  thinking: { type: "disabled" },
-};
-
-export interface PayloadOptions {
-  /** 是否附加"降低思考档位"字段 */
-  lowThinking?: boolean;
-  maxTokens?: number;
-}
-
-export function buildChatPayload(
-  context: BrowsingContext,
-  count: number,
-  model: string,
-  options: PayloadOptions = {},
-) {
-  const payload: Record<string, unknown> = {
-    model,
-    temperature: 0.5,
-    max_tokens: options.maxTokens ?? MAX_OUTPUT_TOKENS,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: buildUserPrompt(context, count) },
-    ],
-  };
-  if (options.lowThinking) Object.assign(payload, THINKING_OFF_FIELDS);
-  return payload;
-}
-
-/** 支持填 base（自动补 /chat/completions）或直接填完整端点 */
-export function chatCompletionsUrl(baseUrl: string): string {
-  const trimmed = baseUrl.trim().replace(/\/+$/, "");
-  if (/\/chat\/completions$/.test(trimmed)) return trimmed;
-  return `${trimmed}/chat/completions`;
-}
-
-/** 申请权限用的 origin 模式 */
-export function permissionOrigin(baseUrl: string): string | null {
-  try {
-    return `${new URL(baseUrl).origin}/*`;
-  } catch {
-    return null;
-  }
-}
-
-export function normalizeBaseUrl(raw: string): string {
-  return raw.trim().replace(/\/+$/, "");
-}
+// 接口地址/请求组装（chatCompletionsUrl、低思考字段、超时）统一在 @/newtab/core/ai/client.ts，
+// 全应用共享一份配置；本文件只保留"推荐"业务自己的纯逻辑。
 
 /** 从模型回复里解析推荐（容忍代码围栏与多余文字） */
 export function parseRecommendations(content: string): Recommendation[] {

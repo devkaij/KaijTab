@@ -1,9 +1,21 @@
 /**
- * 今日热榜纯逻辑：5 个平台的公开接口 + 容错解析。
+ * 今日热榜纯逻辑：10 个平台的公开接口 + 容错解析（国内 5 个 + 国外 5 个）。
  * 全部免鉴权、免第三方聚合服务；接口地址与字段均已实测。
+ * 国外源可配合「翻译成中文」：翻译走用户自己配置的 AI 接口（见 @/newtab/core/ai）。
  */
+import { allBlocks, extractTag } from "@/shared/utils/feeds";
 
-export type HotSource = "baidu" | "bilibili" | "toutiao" | "juejin" | "github";
+export type HotSource =
+  | "baidu"
+  | "toutiao"
+  | "bilibili"
+  | "juejin"
+  | "github"
+  | "hackernews"
+  | "lobsters"
+  | "devto"
+  | "gtrends"
+  | "techmeme";
 
 export interface HotItem {
   title: string;
@@ -18,8 +30,12 @@ export interface HotSourceDef {
   label: string;
   /** 需要额外请求头时给出（GitHub 用 Accept 换稳定结构） */
   headers?: Record<string, string>;
+  /** 接口返回类型：默认 json；RSS/XML 用 text（parse 收到原始字符串） */
+  format?: "json" | "text";
+  /** 外文源：支持一键翻译成中文 */
+  foreign?: boolean;
   buildUrl(now?: Date): string;
-  parse(json: unknown): HotItem[];
+  parse(data: unknown): HotItem[];
   note?: string;
 }
 
@@ -36,6 +52,11 @@ function str(value: unknown): string {
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
+/** 外部接口的 URL 常有尾巴（HN 偶发结尾反斜杠）：统一清掉不可见/多余的字符 */
+function cleanUrl(value: unknown): string {
+  return str(value).replace(/[\\\s]+$/, "");
 }
 
 /** 热度数值 → 友好文案 */
@@ -124,6 +145,85 @@ export function parseGithub(json: unknown): HotItem[] {
   return out;
 }
 
+/** Hacker News 首页热帖（Algolia 搜索接口，一次请求拿全字段） */
+export function parseHackerNews(json: unknown): HotItem[] {
+  const out: HotItem[] = [];
+  for (const raw of asArray(record(json).hits)) {
+    const item = record(raw);
+    const title = str(item.title) || str(item.story_title);
+    if (!title) continue;
+    const id = str(item.objectID);
+    const url = cleanUrl(item.url) || (id ? `https://news.ycombinator.com/item?id=${id}` : "");
+    if (!url) continue;
+    const points = Number(item.points);
+    const hot = Number.isFinite(points) && points > 0 ? `▲ ${points}` : undefined;
+    out.push(hot ? { title, url, hot } : { title, url });
+  }
+  return out;
+}
+
+/** Lobsters 热门（程序员社区，score 齐全） */
+export function parseLobsters(json: unknown): HotItem[] {
+  const out: HotItem[] = [];
+  for (const raw of asArray(json)) {
+    const item = record(raw);
+    const title = str(item.title);
+    if (!title) continue;
+    const id = str(item.short_id);
+    const url = cleanUrl(item.url) || (id ? `https://lobste.rs/s/${id}` : "");
+    if (!url) continue;
+    const score = Number(item.score);
+    out.push(
+      Number.isFinite(score) && score > 0 ? { title, url, hot: `▲ ${score}` } : { title, url },
+    );
+  }
+  return out;
+}
+
+/** dev.to 热门文章（每天更新的开发者社区榜单） */
+export function parseDevto(json: unknown): HotItem[] {
+  const out: HotItem[] = [];
+  for (const raw of asArray(json)) {
+    const item = record(raw);
+    const title = str(item.title);
+    const url = cleanUrl(item.url);
+    if (!title || !url) continue;
+    const reactions = Number(item.positive_reactions_count);
+    out.push(
+      Number.isFinite(reactions) && reactions > 0
+        ? { title, url, hot: `♥ ${reactions}` }
+        : { title, url },
+    );
+  }
+  return out;
+}
+
+/** 谷歌热搜（美区 RSS）：title + ht:approx_traffic 搜索量 */
+export function parseGoogleTrends(xml: string): HotItem[] {
+  const out: HotItem[] = [];
+  for (const block of allBlocks(xml, "item")) {
+    const title = extractTag(block, "title") ?? "";
+    if (!title) continue;
+    const traffic = extractTag(block, "ht:approx_traffic") ?? "";
+    // 该 RSS 的 <link> 指向 feed 自己，没有价值；统一拼搜索趋势页
+    const url = `https://trends.google.com/trends/explore?q=${encodeURIComponent(title)}&geo=US`;
+    out.push(traffic ? { title, url, hot: traffic } : { title, url });
+  }
+  return out;
+}
+
+/** Techmeme 头条（RSS）：科技新闻标题聚合 */
+export function parseTechmeme(xml: string): HotItem[] {
+  const out: HotItem[] = [];
+  for (const block of allBlocks(xml, "item")) {
+    const title = extractTag(block, "title") ?? "";
+    if (!title) continue;
+    const link = extractTag(block, "link") ?? "";
+    out.push({ title, url: /^https?:\/\//.test(link) ? link : "https://www.techmeme.com/" });
+  }
+  return out;
+}
+
 function githubTrendingUrl(now: Date): string {
   const since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const params = new URLSearchParams({
@@ -169,6 +269,48 @@ export const HOT_SOURCES: HotSourceDef[] = [
     parse: parseGithub,
     note: "最近 7 天新增 star 最多的仓库",
   },
+  {
+    id: "hackernews",
+    label: "Hacker News",
+    foreign: true,
+    buildUrl: () => "https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=20",
+    parse: parseHackerNews,
+    note: "科技圈头条（英文，可翻译）",
+  },
+  {
+    id: "lobsters",
+    label: "Lobsters",
+    foreign: true,
+    buildUrl: () => "https://lobste.rs/hottest.json",
+    parse: parseLobsters,
+    note: "程序员社区热门（英文，可翻译）",
+  },
+  {
+    id: "devto",
+    label: "dev.to",
+    foreign: true,
+    buildUrl: () => "https://dev.to/api/articles?top=1&per_page=20",
+    parse: parseDevto,
+    note: "开发者热门文章（英文，可翻译）",
+  },
+  {
+    id: "gtrends",
+    label: "谷歌热搜 · 美区",
+    foreign: true,
+    format: "text",
+    buildUrl: () => "https://trends.google.com/trending/rss?geo=US",
+    parse: (data) => parseGoogleTrends(String(data)),
+    note: "Google Trends 美国实时热搜（英文，可翻译）",
+  },
+  {
+    id: "techmeme",
+    label: "Techmeme",
+    foreign: true,
+    format: "text",
+    buildUrl: () => "https://www.techmeme.com/feed.xml",
+    parse: (data) => parseTechmeme(String(data)),
+    note: "科技新闻头条聚合（英文，可翻译）",
+  },
 ];
 
 export function getSource(id: string): HotSourceDef {
@@ -184,4 +326,104 @@ export function formatRelative(at: number, now: number): string {
   if (minutes < 1) return "刚刚";
   if (minutes < 60) return `${minutes} 分钟前`;
   return `${Math.floor(minutes / 60)} 小时前`;
+}
+
+// ---------- 国外源翻译成中文（走用户自己的 AI 接口，纯逻辑部分） ----------
+
+/** 一次请求最多翻译多少条 */
+export const TRANSLATE_MAX_BATCH = 20;
+/** 译文缓存上限（按写入顺序裁剪最旧的） */
+export const TRANSLATION_CACHE_LIMIT = 400;
+
+export const TRANSLATE_SYSTEM_PROMPT = [
+  "你是翻译引擎。用户会给你一个 JSON 字符串数组，里面是新闻/热搜标题。",
+  "把每条标题翻译成简体中文：",
+  "1. 只输出一个 JSON 字符串数组，长度与输入完全一致，不要输出解释或多余文字；",
+  "2. 专有名词（公司、产品、人名、缩写如 AI/GPU/ChatGPT）有通行中文译名就用译名，没有就保留原文；",
+  "3. 数字、型号、版本号原样保留；",
+  "4. 译文简洁自然，符合中文新闻标题习惯，不要在结尾加句号。",
+].join("\n");
+
+/** 用 JSON 数组传标题：转义交给 JSON，模型最容易原样对齐 */
+export function buildTranslateUserPrompt(titles: string[]): string {
+  return JSON.stringify(titles);
+}
+
+/** 稳定短键（FNV-1a 32 位）：用标题原文做缓存键，但键本身保持短小 */
+export function translationKey(title: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < title.length; i += 1) {
+    hash ^= title.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function trimFence(content: string): string {
+  return content
+    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/i, "")
+    .trim();
+}
+
+/**
+ * 解析模型返回的译文，按输入顺序对齐（长度 = count，失败位置为空串）。
+ * 容忍三种形式：[...]、{"1": "...", ...}、以及带多余说明文字的回复。
+ */
+export function parseTranslations(content: string, count: number): string[] {
+  const out = new Array<string>(count).fill("");
+  const text = trimFence(content);
+  if (!text) return out;
+
+  const arrayStart = text.indexOf("[");
+  const arrayEnd = text.lastIndexOf("]");
+  if (arrayStart >= 0 && arrayEnd > arrayStart) {
+    try {
+      const parsed: unknown = JSON.parse(text.slice(arrayStart, arrayEnd + 1));
+      if (Array.isArray(parsed)) {
+        parsed.forEach((value, index) => {
+          if (index < count && typeof value === "string") out[index] = value.trim();
+        });
+        return out;
+      }
+    } catch {
+      // 落到对象分支再试一次
+    }
+  }
+
+  const objStart = text.indexOf("{");
+  const objEnd = text.lastIndexOf("}");
+  if (objStart >= 0 && objEnd > objStart) {
+    try {
+      const parsed: unknown = JSON.parse(text.slice(objStart, objEnd + 1));
+      if (parsed && typeof parsed === "object") {
+        for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+          const index = Number.parseInt(key, 10) - 1; // 模型常用 1 基编号
+          if (Number.isInteger(index) && index >= 0 && index < count && typeof value === "string") {
+            out[index] = value.trim();
+          }
+        }
+      }
+    } catch {
+      // 解析不了就当没有译文
+    }
+  }
+
+  return out;
+}
+
+/** 缓存裁剪：只保留最近写入的 limit 条，避免本地数据无限增长 */
+export function pruneTranslations(
+  cache: Record<string, string>,
+  limit = TRANSLATION_CACHE_LIMIT,
+): Record<string, string> {
+  const keys = Object.keys(cache);
+  if (keys.length <= limit) return cache;
+  const out: Record<string, string> = {};
+  for (const key of keys.slice(keys.length - limit)) {
+    const value = cache[key];
+    if (value != null) out[key] = value;
+  }
+  return out;
 }

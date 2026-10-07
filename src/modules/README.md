@@ -66,6 +66,18 @@ modules/<id>/
   ```
 - **非敏感配置**（接口地址、模型名等）：用 `runtime.settings`（随设置一起跨设备同步）
 - **只读的应用数据**：`runtime.app.shortcuts()` 可拿到用户的快捷方式列表（标题 + URL），不需要自己访问 `chrome.*`
+- **要用大模型能力**（翻译、分类、摘要…）：用共享的 `runtime.ai`，不要自己拼请求
+  ```ts
+  runtime.ai.configured(); // 用户配过 AI 接口吗（没配就提示去配）
+  const text = await runtime.ai.chat(
+    [
+      { role: "system", content: "你是翻译引擎…" },
+      { role: "user", content: JSON.stringify(titles) },
+    ],
+    { maxTokens: 1200, temperature: 0.2 },
+  );
+  ```
+  低思考档位字段、接口 400 自动降级、超时与中止都由宿主统一处理；配置界面复用 `@/newtab/core/ai/AiConfigForm`（`hot-list` 模块是完整例子：未配置时弹层里嵌这个表单，保存后自动开始）
 - 若模块必须使用浏览器 API（例如书签、历史记录），请在模块 README 里写明原因与所需权限
 
 ## 创建新模块

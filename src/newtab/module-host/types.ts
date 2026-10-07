@@ -95,6 +95,17 @@ export interface ModuleRuntime {
     /** 当前实例是否仍在画布上（异步回调写数据前先确认，避免给已删除的元件留垃圾数据） */
     alive(): boolean;
   };
+  /**
+   * 共享的 AI 能力：走用户自己配置的 OpenAI 兼容接口。
+   * 未配置时 configured() 返回 false；chat() 会抛错。
+   */
+  ai: {
+    configured(): boolean;
+    chat(
+      messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
+      options?: { maxTokens?: number; temperature?: number; signal?: AbortSignal },
+    ): Promise<string>;
+  };
   /** 模块级设置（跨实例共享） */
   settings: {
     get<T extends Record<string, unknown>>(): T;

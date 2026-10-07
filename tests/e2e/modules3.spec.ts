@@ -132,6 +132,9 @@ test.describe("新一批模块：联网", () => {
       return key ? (data[key]?.cache?.items?.length ?? 0) : 0;
     });
     expect(cached).toBeGreaterThanOrEqual(3);
+
+    // 国内源没有「译」按钮（只有国外源才需要翻译）
+    await expect(newTab.getByTestId("hot-translate")).toHaveCount(0);
   });
 
   test("在线电台：列表渲染并可播放（点击后进入播放态）", async ({ newTab, context }) => {
@@ -286,5 +289,161 @@ test.describe("新一批模块：联网", () => {
     await expect(week).toContainText("今天");
     await expect(week).toContainText("明天");
     await expect(week).toContainText("25°");
+  });
+});
+
+/** 把热榜实例切到国外源，可选写入共享的 AI 接口配置（模拟用户已配置） */
+async function seedHotSource(page: Page, source: string, aiBaseUrl: string | null): Promise<void> {
+  await page.evaluate(
+    async (payload) => {
+      const store = (
+        window as unknown as { __kaijtab: { commit: (fn: (s: unknown) => unknown) => void } }
+      ).__kaijtab;
+      store.commit((raw) => {
+        const state = structuredClone(raw) as {
+          layout: { items: Array<{ id: string; type: string; props: Record<string, unknown> }> };
+          modules: { settings: Record<string, unknown> };
+          localSecrets: Record<string, unknown>;
+        };
+        const item = state.layout.items.find((i) => i.type === "hot-list");
+        if (item) item.props.source = payload.source;
+        const next = { ...state };
+        if (payload.baseUrl) {
+          next.modules = {
+            ...state.modules,
+            settings: {
+              ...state.modules.settings,
+              ai: { baseUrl: payload.baseUrl, model: "test-model" },
+            },
+          };
+          next.localSecrets = { ...state.localSecrets, "ai:apiKey": "sk-test" };
+        }
+        return next;
+      });
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    },
+    { source, baseUrl: aiBaseUrl },
+  );
+  await page.reload();
+  await page.locator(".kt-item").first().waitFor({ timeout: 20_000 });
+}
+
+test.describe("热榜：国外源与译中", () => {
+  test("Hacker News：解析英文榜，点「译」出中文并在下方保留原文", async ({ newTab, context }) => {
+    await context.route("**/hn.algolia.com/**", (route) =>
+      route.fulfill({
+        json: {
+          hits: [
+            {
+              objectID: "1",
+              title: "Mistral Large 4 is here",
+              url: "https://example.com/a",
+              points: 1899,
+            },
+            {
+              objectID: "2",
+              title: "Sharing AI progress in mathematics",
+              url: "https://example.com/b",
+              points: 1032,
+            },
+          ],
+        },
+      }),
+    );
+
+    const bodies: string[] = [];
+    await context.route("**/ai.example.com/**", async (route) => {
+      bodies.push(route.request().postData() ?? "");
+      await route.fulfill({
+        json: {
+          choices: [{ message: { content: '["Mistral Large 4 来了","分享数学领域的 AI 进展"]' } }],
+        },
+      });
+    });
+
+    await addModule(newTab, "hot-list");
+    await seedHotSource(newTab, "hackernews", "https://ai.example.com/v1");
+
+    const items = newTab.getByTestId("hot-item");
+    await expect(items).toHaveCount(2, { timeout: 20_000 });
+    await expect(items.first()).toContainText("Mistral Large 4 is here");
+    await expect(items.first()).toContainText("▲ 1899");
+    await expect(newTab.locator(".kt-hot-source")).toHaveText("Hacker News");
+
+    await newTab.getByTestId("hot-translate").click();
+    await expect(items.first()).toContainText("Mistral Large 4 来了", { timeout: 15_000 });
+    // 原文作为第二行保留（方便对照）
+    await expect(items.first().getByTestId("hot-original")).toHaveText("Mistral Large 4 is here");
+    await expect(items.nth(1)).toContainText("分享数学领域的 AI 进展");
+    await expect(newTab.getByTestId("hot-translate")).toHaveClass(/kt-hot-translate-on/);
+
+    // 发给模型的是标题原文，用的是共享配置里的模型名
+    const sent = bodies.join("\n");
+    expect(sent).toContain("Mistral Large 4 is here");
+    expect(sent).toContain("test-model");
+
+    // 译文与开关都落到本地
+    const stored = await newTab.evaluate(() => {
+      const store = (
+        window as unknown as {
+          __kaijtab: {
+            state: {
+              value: {
+                moduleData: Record<string, { translations?: Record<string, string> }>;
+                modules: { settings: Record<string, { translate?: boolean }> };
+              };
+            };
+          };
+        }
+      ).__kaijtab;
+      const data = store.state.value.moduleData;
+      const key = Object.keys(data).find((k) => k.startsWith("hot-list:"));
+      return {
+        translations: key ? Object.keys(data[key]?.translations ?? {}).length : 0,
+        translate: store.state.value.modules.settings["hot-list"]?.translate === true,
+      };
+    });
+    expect(stored.translations).toBeGreaterThanOrEqual(2);
+    expect(stored.translate).toBe(true);
+  });
+
+  test("Lobsters：未配置 AI 时点「译」弹出设置层，且挂在 body 上不被元件裁切", async ({
+    newTab,
+    context,
+  }) => {
+    await context.route("**/lobste.rs/**", (route) =>
+      route.fulfill({
+        json: [
+          {
+            title: "Brut, the Brutal Router for Unix Tools",
+            url: "https://example.com/l",
+            score: 31,
+            short_id: "abc123",
+          },
+        ],
+      }),
+    );
+
+    await addModule(newTab, "hot-list");
+    await seedHotSource(newTab, "lobsters", null);
+
+    await expect(newTab.getByTestId("hot-item").first()).toContainText(
+      "Brut, the Brutal Router for Unix Tools",
+      { timeout: 20_000 },
+    );
+
+    await newTab.getByTestId("hot-translate").click();
+
+    const modal = newTab.getByTestId("hot-translate-modal");
+    await expect(modal).toBeVisible();
+    // 弹窗 portal 到 body：元件容器的 overflow:hidden 裁不到它
+    await expect(newTab.locator("body > .kt-hot-modal")).toHaveCount(1);
+    await expect(modal).toContainText("接入你的 AI 接口");
+    await expect(modal.getByTestId("ai-base-url")).toBeVisible();
+
+    // 关掉弹窗后开关不留在打开状态
+    await modal.locator(".kt-hot-modal-close").click();
+    await expect(modal).toHaveCount(0);
+    await expect(newTab.getByTestId("hot-translate")).not.toHaveClass(/kt-hot-translate-on/);
   });
 });

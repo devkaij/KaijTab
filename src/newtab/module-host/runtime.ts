@@ -1,6 +1,8 @@
 /** runtime 注入：模块与宿主之间唯一的接口面。 */
 import { signal } from "@preact/signals";
 import { commit, state } from "@/newtab/store";
+import { chat } from "@/newtab/core/ai/client";
+import { isAiConfigured } from "@/newtab/core/ai/config";
 import type { ModuleRuntime } from "./types";
 
 const pageVisible = signal(typeof document === "undefined" ? true : !document.hidden);
@@ -60,6 +62,11 @@ export function createRuntime(moduleId: string, instanceId: string): ModuleRunti
       shortcuts: () =>
         state.value.shortcuts.items.map((item) => ({ title: item.title, url: item.url })),
       alive: () => state.value.layout.items.some((item) => item.id === instanceId),
+    },
+
+    ai: {
+      configured: () => isAiConfigured(state.value),
+      chat: (messages, options) => chat(messages, options),
     },
 
     settings: {
