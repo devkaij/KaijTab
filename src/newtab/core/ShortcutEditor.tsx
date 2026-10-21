@@ -1,15 +1,13 @@
-import { useEffect, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 import { saveShortcut, shortcutEditor } from "@/newtab/store";
-import { iconCandidates } from "@/shared/utils/icons";
+import { ensureHostPermission } from "@/shared/utils/permissions";
+import { IconProbe } from "@/shared/ui/IconProbe";
 
 /** 快捷方式新增/编辑弹窗：挂在 App 顶层，避免被元件容器裁切。 */
 export function ShortcutEditor() {
   const draft = shortcutEditor.value;
-  const [iconFailed, setIconFailed] = useState(false);
-
-  useEffect(() => {
-    setIconFailed(false);
-  }, [draft?.icon, draft?.url]);
+  // 手动触发一次重新探测（授权新域名后需要重跑整条候选链）
+  const [probeNonce, setProbeNonce] = useState(0);
 
   if (!draft) return null;
 
@@ -23,10 +21,6 @@ export function ShortcutEditor() {
     saveShortcut({ id: draft.id, title, url, icon: draft.icon });
     close();
   };
-
-  const preview = iconCandidates(
-    draft.icon ? { url: draft.url, icon: draft.icon } : { url: draft.url },
-  )[0];
 
   return (
     <>
@@ -62,14 +56,15 @@ export function ShortcutEditor() {
           />
         </label>
         <label class="kt-field">
-          <span>图标地址（可选，留空自动获取）</span>
+          <span>图标地址（可选，留空自动识别）</span>
           <div class="kt-icon-input">
             <span class="kt-icon-preview">
-              {preview && !iconFailed ? (
-                <img src={preview} alt="" onError={() => setIconFailed(true)} />
-              ) : (
-                <span>{(draft.title || draft.url || "?")[0]?.toUpperCase()}</span>
-              )}
+              <IconProbe
+                key={probeNonce}
+                url={draft.url}
+                icon={draft.icon || undefined}
+                letter={draft.title || draft.url}
+              />
             </span>
             <input
               type="text"
@@ -81,6 +76,19 @@ export function ShortcutEditor() {
                 (shortcutEditor.value = { ...draft, icon: (e.target as HTMLInputElement).value })
               }
             />
+            <button
+              type="button"
+              class="kt-btn kt-btn-probe"
+              data-testid="shortcut-icon-refresh"
+              title="重新识别图标：抓取站点页面声明与公开图标库；新域名会弹出授权询问"
+              onClick={async () => {
+                const url = draft.url.trim();
+                if (url) await ensureHostPermission(url);
+                setProbeNonce((n) => n + 1);
+              }}
+            >
+              识别
+            </button>
           </div>
         </label>
         <div class="kt-modal-actions">

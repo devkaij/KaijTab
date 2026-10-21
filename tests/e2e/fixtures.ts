@@ -35,6 +35,11 @@ export const test = base.extend<KaijTabFixtures>({
   },
 
   newTab: async ({ context, extensionId }, use) => {
+    // 默认断掉第三方图标服务，保证 E2E 不依赖外网（个别测试要真行为时自行 route 覆盖）
+    await context.route(
+      /icons\.duckduckgo\.com|www\.google\.com\/s2\/favicons/,
+      (route) => route.abort(),
+    );
     const page = await context.newPage();
     await page.goto(`chrome-extension://${extensionId}/main.html`);
     await page.waitForFunction(() => Boolean((window as unknown as Record<string, unknown>).__kaijtab), null, {

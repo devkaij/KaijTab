@@ -113,4 +113,29 @@ test.describe("外观：玻璃效果与尺寸自适应", () => {
     );
     expect(broken).toBe(0);
   });
+
+  test("网站图标：站点路径失败时用公开图标服务兜底（DDG）", async ({ newTab, context }) => {
+    // 站点自己的图标路径全部断掉，第三方服务返回一张 1x1 PNG——
+    // 验证候选链能走到服务段并加载成功（fixtures 默认 abort 服务，这里按测试覆盖）
+    await context.route(/\/favicon\.(ico|png)$/, (route) => route.abort());
+    await context.route(/\/apple-touch-icon\.png$/, (route) => route.abort());
+    await context.route(/icons\.duckduckgo\.com/, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "image/png",
+        body: Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+          "base64",
+        ),
+      }),
+    );
+
+    await newTab.reload();
+    await newTab.waitForTimeout(3000);
+
+    const loaded = await newTab.locator(".kt-sc-icon img").evaluateAll((imgs) =>
+      (imgs as HTMLImageElement[]).filter((img) => img.complete && img.naturalWidth > 0).length,
+    );
+    expect(loaded).toBeGreaterThanOrEqual(1);
+  });
 });

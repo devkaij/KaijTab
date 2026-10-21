@@ -469,6 +469,13 @@
   object-fit: contain;
 }
 
+/* 图标输入行尾部的「识别」小按钮 */
+.kt-btn-probe {
+  flex: none;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
 .kt-modal-actions {
   display: flex;
   justify-content: flex-end;
