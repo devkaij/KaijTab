@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildChinaSearchUrl,
   buildForecastUrl,
   buildGeocodeUrl,
   formatDayLabel,
   formatUpdated,
+  chinaWeatherUrls,
+  cnTypeToCode,
   isFresh,
+  normalizeCityQuery,
+  parseChinaWeather,
+  parseCitySearch,
+  parseCnTemp,
   parseForecast,
   parseGeocode,
   weatherDescriptor,
@@ -133,5 +140,114 @@ describe("缓存与时间文案", () => {
     expect(formatUpdated(now - 5 * 60_000, now)).toBe("5 分钟前更新");
     expect(formatUpdated(now - 3 * 3_600_000, now)).toBe("3 小时前更新");
     expect(formatUpdated(now - 2 * 86_400_000, now)).toBe("2 天前更新");
+  });
+});
+
+// ———————— 境内备用源（中国天气网镜像） ————————
+
+describe("境内备用源：城市查询与 ID 解析", () => {
+  const searchJson = [
+    { ref: "101020100~shanghai~上海~Shanghai~上海~Shanghai~21~200000~SH~上海" },
+    { ref: "101020200~shanghai~闵行~Minhang~闵行~Minhang~21~201100~MH~上海" },
+    { ref: "bad-ref~x~坏数据" },
+    { other: "无 ref 字段" },
+  ];
+
+  it("normalizeCityQuery 去掉行政区后缀", () => {
+    expect(normalizeCityQuery("上海市")).toBe("上海");
+    expect(normalizeCityQuery("呼和浩特市")).toBe("呼和浩特");
+    expect(normalizeCityQuery("杭州")).toBe("杭州");
+    expect(normalizeCityQuery("  北京  ")).toBe("北京");
+  });
+
+  it("精确匹配中文名优先", () => {
+    expect(parseCitySearch(searchJson, "上海")).toBe("101020100");
+  });
+
+  it("无精确匹配时取名字最短的条目，坏条目跳过", () => {
+    expect(parseCitySearch(searchJson, "沪")).toBe("101020100");
+    expect(parseCitySearch([], "上海")).toBeNull();
+    expect(parseCitySearch({ nope: 1 }, "上海")).toBeNull();
+  });
+
+  it("搜索 URL 带编码后的城市名", () => {
+    expect(buildChinaSearchUrl("上海")).toBe(
+      "http://toy1.weather.com.cn/search?cityname=%E4%B8%8A%E6%B5%B7",
+    );
+  });
+
+  it("天气数据 URL 覆盖两个镜像", () => {
+    expect(chinaWeatherUrls("101020100")).toEqual([
+      "http://t.weather.itboy.net/api/weather/city/101020100",
+      "http://t.weather.sojson.com/api/weather/city/101020100",
+    ]);
+  });
+});
+
+describe("境内备用源：类型→WMO 码与响应解析", () => {
+  it("cnTypeToCode：精确表 + 关键字兜底", () => {
+    expect(cnTypeToCode("晴")).toBe(0);
+    expect(cnTypeToCode("多云")).toBe(2);
+    expect(cnTypeToCode("阴")).toBe(3);
+    expect(cnTypeToCode("小雨")).toBe(61);
+    expect(cnTypeToCode("雷阵雨")).toBe(95);
+    expect(cnTypeToCode("阵雪")).toBe(85);
+    expect(cnTypeToCode("霾")).toBe(45);
+    // 复合/未知类型走关键字
+    expect(cnTypeToCode("小雨-中雨")).toBe(61);
+    expect(cnTypeToCode("雨夹雪")).toBe(71);
+    expect(cnTypeToCode("外星尘暴")).toBe(45);
+    expect(cnTypeToCode("")).toBe(3);
+  });
+
+  it("parseCnTemp 解析「高温 21℃」类字段", () => {
+    expect(parseCnTemp("高温 21℃")).toBe(21);
+    expect(parseCnTemp("低温 -3℃")).toBe(-3);
+    expect(parseCnTemp("15℃")).toBe(15);
+    expect(parseCnTemp("没数字")).toBeNull();
+    expect(parseCnTemp(42)).toBe(42);
+  });
+
+  it("parseChinaWeather：真实响应形状 → WeatherNow", () => {
+    const sample = {
+      message: "success!",
+      status: 200,
+      date: "20261022",
+      time: "2026-10-22 00:00:00",
+      cityInfo: { city: "上海市", parent: "上海", updateTime: "00:00" },
+      data: {
+        shidu: "62%",
+        pm25: 35,
+        pm10: 60,
+        quality: "良",
+        wendu: 15,
+        ganmao: "较易感冒",
+        forecast: [
+          { date: "22", ymd: "2026-10-22", week: "星期四", high: "高温 21℃", low: "低温 15℃", type: "晴" },
+          { date: "23", ymd: "2026-10-23", week: "星期五", high: "高温 23℃", low: "低温 14℃", type: "小雨" },
+        ],
+        yesterday: { ymd: "2026-10-21", high: "高温 20℃", low: "低温 14℃", type: "多云" },
+      },
+    };
+    const weather = parseChinaWeather(sample, 1_000);
+    expect(weather).not.toBeNull();
+    expect(weather!.temperature).toBe(15);
+    expect(weather!.apparent).toBe(15);
+    expect(weather!.humidity).toBe(62);
+    expect(weather!.windSpeed).toBeNull();
+    expect(weather!.code).toBe(0);
+    expect(weather!.high).toBe(21);
+    expect(weather!.low).toBe(15);
+    expect(weather!.daily).toHaveLength(2);
+    expect(weather!.daily[0]).toEqual({ date: "2026-10-22", code: 0, high: 21, low: 15 });
+    expect(weather!.daily[1]!.code).toBe(61);
+    expect(weather!.fetchedAt).toBe(1_000);
+  });
+
+  it("parseChinaWeather：status 非 200 / 缺 wendu / 空对象都返回 null", () => {
+    expect(parseChinaWeather({ status: 403, data: { wendu: 1 } })).toBeNull();
+    expect(parseChinaWeather({ status: 200, data: {} })).toBeNull();
+    expect(parseChinaWeather(null)).toBeNull();
+    expect(parseChinaWeather("not json")).toBeNull();
   });
 });

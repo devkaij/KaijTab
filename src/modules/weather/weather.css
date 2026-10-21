@@ -69,6 +69,11 @@
   opacity: 0.75;
 }
 
+/* 备用源标记（中国天气网）继承脚注样式，仅稍淡 */
+.kt-weather-src {
+  opacity: 0.8;
+}
+
 /* 7 天预报：元件太矮时自动隐藏，避免挤压主信息 */
 .kt-weather-week {
   display: flex;

@@ -127,6 +127,10 @@ test.describe("新模块：天气（网络拦截）", () => {
     await context.route("**/geocoding-api.open-meteo.com/**", (route) =>
       route.fulfill({ status: 500, body: "boom" }),
     );
+    // 境内备用源也要断掉，才能走到最终错误态（保持 E2E 不依赖外网）
+    for (const host of ["toy1.weather.com.cn", "t.weather.itboy.net", "t.weather.sojson.com"]) {
+      await context.route(`**/${host}/**`, (route) => route.abort());
+    }
 
     await enterEditMode(newTab);
     await addModule(newTab, "weather");
@@ -134,6 +138,44 @@ test.describe("新模块：天气（网络拦截）", () => {
     await expect(newTab.getByTestId("weather-error")).toBeVisible({ timeout: 15_000 });
     await expect(newTab.getByTestId("weather-error")).toContainText("HTTP 500");
     await expect(newTab.getByTestId("weather-error").getByText("重试")).toBeVisible();
+  });
+
+  test("备用源：Open-Meteo 全挂时走中国天气网镜像并标注来源", async ({ newTab, context }) => {
+    await context.route("**/geocoding-api.open-meteo.com/**", (route) => route.abort());
+    await context.route("**/api.open-meteo.com/**", (route) => route.abort());
+    await context.route("**/toy1.weather.com.cn/**", (route) =>
+      route.fulfill({
+        json: [{ ref: "101010100~beijing~北京~Beijing~北京~Beijing~11~100000~BJ~北京" }],
+      }),
+    );
+    const day = (offset: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() + offset);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    };
+    await context.route("**/t.weather.itboy.net/**", (route) =>
+      route.fulfill({
+        json: {
+          status: 200,
+          cityInfo: { city: "北京", parent: "北京" },
+          data: {
+            wendu: 15,
+            shidu: "40%",
+            forecast: [
+              { ymd: day(0), week: "星期四", high: "高温 21℃", low: "低温 9℃", type: "晴" },
+              { ymd: day(1), week: "星期五", high: "高温 19℃", low: "低温 7℃", type: "多云" },
+            ],
+          },
+        },
+      }),
+    );
+
+    await enterEditMode(newTab);
+    await addModule(newTab, "weather");
+
+    await expect(newTab.getByTestId("weather-temp")).toHaveText("15°", { timeout: 15_000 });
+    await expect(newTab.getByTestId("weather")).toContainText("21° / 9°");
+    await expect(newTab.getByTestId("weather")).toContainText("中国天气网");
   });
 });
 

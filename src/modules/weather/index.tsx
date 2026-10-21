@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import type { ModuleProps } from "@/newtab/module-host/types";
 import {
+  buildChinaSearchUrl,
   buildForecastUrl,
   buildGeocodeUrl,
+  chinaWeatherUrls,
   formatDayLabel,
   formatUpdated,
   isFresh,
+  normalizeCityQuery,
+  parseChinaWeather,
+  parseCitySearch,
   parseForecast,
   parseGeocode,
   weatherDescriptor,
@@ -19,6 +24,8 @@ interface WeatherCache {
   city: string;
   place: GeoPlace | null;
   weather: WeatherNow | null;
+  /** 数据来源：open-meteo（默认，不标） | cn（中国天气网备用源，页脚显示） */
+  source?: "open-meteo" | "cn";
 }
 
 async function fetchJson(url: string, timeoutMs = 8000): Promise<unknown> {
@@ -31,6 +38,24 @@ async function fetchJson(url: string, timeoutMs = 8000): Promise<unknown> {
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** 境内备用源：城市名 → 中国天气网 ID → 实况+预报（两个镜像轮流试） */
+async function fetchChinaWeather(city: string): Promise<WeatherNow> {
+  const query = normalizeCityQuery(city);
+  const id = parseCitySearch(await fetchJson(buildChinaSearchUrl(query)), query);
+  if (!id) throw new Error(`境内源找不到城市「${city}」`);
+  let lastError: unknown = null;
+  for (const url of chinaWeatherUrls(id)) {
+    try {
+      const weather = parseChinaWeather(await fetchJson(url));
+      if (weather) return weather;
+      lastError = new Error("境内源天气数据格式异常");
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("境内源获取失败");
 }
 
 export default function Weather({ props, runtime }: ModuleProps) {
@@ -70,17 +95,29 @@ export default function Weather({ props, runtime }: ModuleProps) {
       setStatus("loading");
 
       try {
-        let place = base.place;
-        if (!place) {
-          const geoJson = await fetchJson(buildGeocodeUrl(city));
-          place = parseGeocode(geoJson);
-          if (!place) throw new Error(`找不到城市「${city}」`);
+        let next: WeatherCache;
+        try {
+          // 主源：Open-Meteo（实况+7 天预报，境外）
+          let place = base.place;
+          if (!place) {
+            const geoJson = await fetchJson(buildGeocodeUrl(city));
+            place = parseGeocode(geoJson);
+            if (!place) throw new Error(`找不到城市「${city}」`);
+          }
+          const forecastJson = await fetchJson(buildForecastUrl(place.latitude, place.longitude));
+          const weather = parseForecast(forecastJson);
+          if (!weather) throw new Error("天气数据格式异常");
+          next = { city, place, weather, source: "open-meteo" };
+        } catch (primaryError) {
+          // 备用源：中国天气网镜像（境内，无 key；系统代理挂掉时的兜底）。
+          // 备用源也失败时，重新抛出主源的错误——它对故障原因更有解释力。
+          try {
+            next = { city, place: base.place, weather: await fetchChinaWeather(city), source: "cn" };
+          } catch {
+            throw primaryError;
+          }
         }
-        const forecastJson = await fetchJson(buildForecastUrl(place.latitude, place.longitude));
-        const weather = parseForecast(forecastJson);
-        if (!weather) throw new Error("天气数据格式异常");
 
-        const next: WeatherCache = { city, place, weather };
         runtimeRef.current.data.set("cache", next);
         setCache(next);
         setError(null);
@@ -155,7 +192,10 @@ export default function Weather({ props, runtime }: ModuleProps) {
               ) : null}
             </div>
           ) : null}
-          <div class="kt-weather-foot">{formatUpdated(weather.fetchedAt, now)}</div>
+          <div class="kt-weather-foot">
+            {formatUpdated(weather.fetchedAt, now)}
+            {cache.source === "cn" ? <span class="kt-weather-src"> · 中国天气网</span> : null}
+          </div>
           {weather.daily.length > 1 ? (
             <div class="kt-weather-week" data-testid="weather-week">
               {weather.daily.map((day, index) => (

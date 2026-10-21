@@ -169,3 +169,135 @@ export function formatUpdated(fetchedAt: number, now: number): string {
   if (hours < 24) return `${hours} 小时前更新`;
   return `${Math.floor(hours / 24)} 天前更新`;
 }
+
+// ———————— 境内备用源：中国天气网（无 key、http 接口，Open-Meteo 不可达时降级） ————————
+
+/** 城市名 → ID 搜索接口（返回 [{ref: "101020100~pinyin~上海~..."}]） */
+export function buildChinaSearchUrl(city: string): string {
+  return `http://toy1.weather.com.cn/search?cityname=${encodeURIComponent(city)}`;
+}
+
+/** ID → 实况+预报，两个镜像同一份数据，先后尝试 */
+export function chinaWeatherUrls(id: string): string[] {
+  return [
+    `http://t.weather.itboy.net/api/weather/city/${id}`,
+    `http://t.weather.sojson.com/api/weather/city/${id}`,
+  ];
+}
+
+/** 查询词规整："上海市"→"上海"、"呼和浩特市"→"呼和浩特" */
+export function normalizeCityQuery(city: string): string {
+  const trimmed = city.trim();
+  const stripped = trimmed.replace(/(特别行政区|自治区|自治州|地区|盟|市|省|县)$/, "");
+  return stripped || trimmed;
+}
+
+/** 从搜索结果里挑城市 ID：中文精确名优先，否则取名字最短的（市区通常比区县短） */
+export function parseCitySearch(json: unknown, query: string): string | null {
+  if (!Array.isArray(json)) return null;
+  let fallback: string | null = null;
+  let fallbackLen = Number.POSITIVE_INFINITY;
+  for (const item of json) {
+    const ref = (item as { ref?: unknown } | null)?.ref;
+    if (typeof ref !== "string") continue;
+    const parts = ref.split("~");
+    const id = parts[0] ?? "";
+    const name = parts[2] ?? "";
+    if (!/^\d{9}$/.test(id) || !name) continue;
+    if (name === query) return id;
+    if (name.length < fallbackLen) {
+      fallback = id;
+      fallbackLen = name.length;
+    }
+  }
+  return fallback;
+}
+
+/** 中国天气网天气类型 → WMO 码（复用现有 weatherDescriptor 出文案与图标） */
+export function cnTypeToCode(type: string): number {
+  const t = (type ?? "").trim();
+  const exact: Record<string, number> = {
+    晴: 0,
+    多云: 2,
+    阴: 3,
+    雾: 45,
+    霾: 45,
+    冻雨: 66,
+    阵雨: 80,
+    雷阵雨: 95,
+    雷阵雨伴有冰雹: 99,
+    小雨: 61,
+    中雨: 63,
+    大雨: 65,
+    暴雨: 65,
+    大暴雨: 65,
+    特大暴雨: 65,
+    阵雪: 85,
+    小雪: 71,
+    中雪: 73,
+    大雪: 75,
+    暴雪: 75,
+    浮尘: 45,
+    扬沙: 45,
+    沙尘暴: 45,
+    强沙尘暴: 45,
+  };
+  if (exact[t] != null) return exact[t];
+  if (t.includes("雷")) return 95;
+  if (t.includes("雪")) return t.includes("阵") ? 85 : 71;
+  if (t.includes("雨")) return t.includes("阵") ? 80 : 61;
+  if (t.includes("雾") || t.includes("霾") || t.includes("沙") || t.includes("尘")) return 45;
+  if (t.includes("阴")) return 3;
+  if (t.includes("云")) return 2;
+  if (t.includes("晴")) return 0;
+  return 3;
+}
+
+/** "高温 21℃" / "低温 -3℃" → 数字 */
+export function parseCnTemp(value: unknown): number | null {
+  if (typeof value !== "string") return num(value);
+  const m = /(-?\d+(?:\.\d+)?)/.exec(value);
+  return m ? Number(m[1]) : null;
+}
+
+/** 中国天气网镜像响应 → WeatherNow（data.forecast[0] 就是今天） */
+export function parseChinaWeather(json: unknown, now = Date.now()): WeatherNow | null {
+  const root = json as {
+    status?: unknown;
+    data?: {
+      wendu?: unknown;
+      shidu?: unknown;
+      forecast?: unknown;
+    };
+  } | null;
+  if (!root || root.status !== 200 || !root.data) return null;
+  const wendu = num(root.data.wendu);
+  if (wendu == null) return null;
+
+  const humidity =
+    typeof root.data.shidu === "string" ? parseCnTemp(root.data.shidu.replace("%", "")) : null;
+  const list = Array.isArray(root.data.forecast) ? root.data.forecast : [];
+  const days: DailyForecast[] = [];
+  for (const item of list) {
+    const f = item as Record<string, unknown>;
+    const date = typeof f.ymd === "string" ? f.ymd : "";
+    const high = parseCnTemp(f.high);
+    const low = parseCnTemp(f.low);
+    const code = cnTypeToCode(typeof f.type === "string" ? f.type : "");
+    if (!date && high == null && low == null) continue;
+    days.push({ date, code, high, low });
+  }
+  const today = days[0];
+
+  return {
+    temperature: wendu,
+    apparent: wendu,
+    humidity,
+    windSpeed: null,
+    code: today?.code ?? 3,
+    high: today?.high ?? null,
+    low: today?.low ?? null,
+    daily: days.slice(0, 7),
+    fetchedAt: now,
+  };
+}
