@@ -111,3 +111,7 @@ docs/
 ## 许可证
 
 [MIT](LICENSE) © devkaij。壁纸、AI 接口等外部资源由使用者自行配置导入，本仓库不附带任何第三方版权素材。
+
+## 致谢
+
+- [Miget](https://miget.com) — 通过其开源支持计划（OSS Program）为本项目提供免费托管资源。
